@@ -1,6 +1,16 @@
 {
   "config": {
     "step": {
+      "user": {
+        "title": "Tap Electric",
+        "description": "Legen Sie unter web.tapelectric.app → Account → API-Verwaltung eine API-App an und fügen Sie den primären API-Schlüssel unten ein.",
+        "data": {
+          "api_key": "API-Schlüssel",
+          "base_url": "API-Basis-URL",
+          "charger_id": "Lade-ID (optional — begrenzt auf eine Ladestation)",
+          "webhook_secret": "Webhook-Geheimnis (optional — aktiviert Push-Updates)"
+        }
+      },
       "advanced_ask": {
         "title": "Erweiterten Modus aktivieren?",
         "description": "Der erweiterte Modus ist optional. Er verwendet Ihre Tap-App-Anmeldung (E-Mail + Passwort), um Live-Sitzungsenergie und detaillierte Metadaten über die Tap-Management-API freizuschalten. Sie können dies jederzeit in den Optionen ein- oder ausschalten.",
@@ -23,14 +33,16 @@
       }
     },
     "error": {
+      "auth": "Ungültiger API-Schlüssel.",
+      "cannot_connect": "Tap Electric API nicht erreichbar. Überprüfen Sie die Basis-URL.",
       "invalid_email": "Diese E-Mail-Adresse ist bei Tap nicht registriert.",
       "invalid_password": "Falsches Passwort.",
       "user_disabled": "Dieses Tap-Konto ist deaktiviert.",
       "firebase_unknown": "Firebase-Authentifizierung fehlgeschlagen.",
-      "account_discovery_failed": "Anmeldung erfolgreich, aber kein Tap-Konto gefunden.",
-      "cannot_connect": "Tap Electric API nicht erreichbar."
+      "account_discovery_failed": "Anmeldung erfolgreich, aber kein Tap-Konto gefunden."
     },
     "abort": {
+      "already_configured": "Dieser API-Schlüssel ist bereits konfiguriert.",
       "reauth_successful": "Erweiterter Modus erneut authentifiziert.",
       "reauth_entry_missing": "Die Integration für diese Re-Authentifizierung existiert nicht mehr."
     }
@@ -39,13 +51,29 @@
     "step": {
       "init": {
         "title": "Tap Electric Optionen",
+        "description": "Wählen Sie einen Bereich.",
         "menu_options": {
           "general": "Allgemeine Einstellungen",
           "advanced_menu": "Erweiterter Modus"
         }
       },
+      "general": {
+        "title": "Allgemeine Einstellungen",
+        "description": "Polling, Frische und Rundung konfigurieren. 'write_enabled' sperrt alle Schreibpfade — deaktivieren Sie dies für einen reinen Lesezugriff.",
+        "data": {
+          "scan_interval_active_s": "Aktives Poll-Intervall (s)",
+          "scan_interval_idle_s": "Idle-Poll-Intervall (s)",
+          "sessions_history_limit": "Anzahl gespeicherter Sitzungen",
+          "meter_data_limit": "Zählerdaten-Limit pro Sitzung",
+          "stale_threshold_minutes": "Veraltungsgrenze für Messwerte (min)",
+          "round_energy_decimals": "Nachkommastellen Energie",
+          "round_power_decimals": "Nachkommastellen Leistung",
+          "write_enabled": "Schreibvorgänge erlauben"
+        }
+      },
       "advanced_menu": {
         "title": "Erweiterter Modus",
+        "description": "Der erweiterte Modus verwendet Ihre Tap-App-Anmeldung für Live-Energie und Metadaten. Aktivieren, aktualisieren oder deaktivieren — hier.",
         "menu_options": {
           "advanced_enable": "Erweiterten Modus aktivieren",
           "advanced_update": "Anmeldedaten aktualisieren",
@@ -54,12 +82,78 @@
       },
       "advanced_creds": {
         "title": "Tap-App-Anmeldedaten",
+        "description": "Mit Tap-App-E-Mail und Passwort anmelden. Das Passwort wird nicht gespeichert — nur das Refresh-Token.",
         "data": {"advanced_email": "E-Mail", "password": "Passwort"}
       }
+    },
+    "error": {
+      "invalid_email": "Diese E-Mail-Adresse ist bei Tap nicht registriert.",
+      "invalid_password": "Falsches Passwort.",
+      "user_disabled": "Dieses Tap-Konto ist deaktiviert.",
+      "firebase_unknown": "Firebase-Authentifizierung fehlgeschlagen.",
+      "account_discovery_failed": "Anmeldung erfolgreich, aber kein Tap-Konto gefunden.",
+      "cannot_connect": "Tap Electric API nicht erreichbar."
+    }
+  },
+  "issues": {
+    "auth_expired": {
+      "title": "Tap Electric API-Schlüssel abgelehnt",
+      "description": "Die Tap Electric API hat zweimal hintereinander 401 zurückgegeben. Ihr API-Schlüssel ist wahrscheinlich abgelaufen oder widerrufen. Erstellen Sie einen neuen unter web.tapelectric.app → Account → API-Verwaltung und konfigurieren Sie die Integration neu."
+    },
+    "charger_offline": {
+      "title": "Tap-Ladestation offline",
+      "description": "Ladestation {charger_id} hat sich seit über 24 Stunden nicht mehr bei Tap gemeldet. Mögliche Ursachen: Netzwerkproblem, Stromausfall oder Firmware-Absturz. Prüfen Sie die Konnektivitäts-LED und starten Sie ggf. neu."
+    },
+    "write_blocked": {
+      "title": "Tap Electric Schreibvorgänge deaktiviert",
+      "description": "Ein Schreibvorgang wurde angefordert, aber 'write_enabled' ist in den Optionen aus. Aktivieren Sie ihn unter Einstellungen → Geräte & Dienste → Tap Electric → Konfigurieren."
+    }
+  },
+  "services": {
+    "pause_charging": {
+      "name": "Laden pausieren",
+      "description": "Ein 0-A-Ladeprofil anwenden. Die Sitzung läuft weiter; das Auto zieht keinen Strom."
+    },
+    "resume_charging": {
+      "name": "Laden fortsetzen",
+      "description": "Ein Ladeprofil mit einem Wert > 0 anwenden."
+    },
+    "set_charging_limit": {
+      "name": "Ladelimit setzen",
+      "description": "Ein beliebiges Stromlimit festlegen."
+    },
+    "reset_charger": {
+      "name": "Ladestation neu starten",
+      "description": "Ladestation neu starten (OCPP Reset)."
+    },
+    "push_external_meter_data": {
+      "name": "Externe Zählerdaten weiterleiten",
+      "description": "Eine Messung eines externen Energiezählers an die Load-Balancing-Engine von Tap weiterleiten."
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "charging_start": "Wenn Laden startet",
+      "charging_stop": "Wenn Laden stoppt",
+      "plug_connected": "Wenn Kabel eingesteckt wird",
+      "plug_disconnected": "Wenn Kabel entfernt wird",
+      "fault": "Wenn Ladestation einen Fehler meldet"
+    },
+    "condition_type": {
+      "is_charging": "Ladestation lädt gerade",
+      "is_connected": "Kabel ist angeschlossen",
+      "is_online": "Ladestation ist online"
+    },
+    "action_type": {
+      "pause": "Laden pausieren",
+      "resume": "Laden fortsetzen",
+      "set_limit": "Stromlimit setzen",
+      "reset": "Ladestation neu starten"
     }
   },
   "entity": {
     "sensor": {
+      "charger_status":             {"name": "Status"},
       "current_session_energy":     {"name": "Aktuelle Sitzungsenergie"},
       "current_session_duration":   {"name": "Aktuelle Sitzungsdauer"},
       "current_session_driver":     {"name": "Aktueller Sitzungsfahrer"},

@@ -7,7 +7,7 @@
         "data": {
           "api_key": "API-sleutel",
           "base_url": "API basis-URL",
-          "charger_id": "Laderer-ID (optioneel — beperkt tot één lader)",
+          "charger_id": "Laadpaal-ID (optioneel — beperkt tot één laadpaal)",
           "webhook_secret": "Webhook-geheim (optioneel — activeert push-updates)"
         }
       },
@@ -65,8 +65,8 @@
         "data": {
           "scan_interval_active_s": "Actief poll-interval (s)",
           "scan_interval_idle_s": "Idle poll-interval (s)",
-          "sessions_history_limit": "Aantal bewaarde sessies",
-          "meter_data_limit": "Meter-datalimiet per sessie",
+          "sessions_history_limit": "Aantal bewaarde laadsessies",
+          "meter_data_limit": "Meter-datalimiet per laadsessie",
           "stale_threshold_minutes": "Verouderingsgrens voor meetwaarden (min)",
           "round_energy_decimals": "Decimalen voor energie",
           "round_power_decimals": "Decimalen voor vermogen",
@@ -100,8 +100,65 @@
       "cannot_connect": "Kon de Tap Electric-API niet bereiken."
     }
   },
+  "issues": {
+    "auth_expired": {
+      "title": "Tap Electric API-sleutel geweigerd",
+      "description": "De Tap Electric-API gaf twee keer na elkaar een 401 terug. Je API-sleutel is waarschijnlijk verlopen of ingetrokken. Maak een nieuwe aan via web.tapelectric.app → Account → API-beheer en herconfigureer de integratie."
+    },
+    "charger_offline": {
+      "title": "Tap-laadpaal offline",
+      "description": "Laadpaal {charger_id} heeft al meer dan 24 uur niets meer gemeld bij Tap. Waarschijnlijke oorzaken: netwerkprobleem, stroomonderbreking of firmware-crash. Controleer het connectiviteitslampje en schakel de stroom uit en weer aan indien nodig."
+    },
+    "write_blocked": {
+      "title": "Tap Electric-schrijfacties uitgeschakeld",
+      "description": "Er werd een schrijfactie aangevraagd, maar 'write_enabled' staat uit in de integratie-opties. Zet hem terug aan via Instellingen → Apparaten & Diensten → Tap Electric → Configureren."
+    }
+  },
+  "services": {
+    "pause_charging": {
+      "name": "Laden pauzeren",
+      "description": "Pas een laadprofiel van 0 A toe. De laadsessie loopt door; de wagen trekt geen stroom."
+    },
+    "resume_charging": {
+      "name": "Laden hervatten",
+      "description": "Pas een laadprofiel met stroom > 0 toe."
+    },
+    "set_charging_limit": {
+      "name": "Laadlimiet instellen",
+      "description": "Stel een willekeurige stroomlimiet in."
+    },
+    "reset_charger": {
+      "name": "Laadpaal herstarten",
+      "description": "Herstart de laadpaal (OCPP Reset)."
+    },
+    "push_external_meter_data": {
+      "name": "Externe meterdata doorsturen",
+      "description": "Stuur een meting van een externe energiemeter door naar de load-balancing-engine van Tap."
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "charging_start": "Wanneer laden start",
+      "charging_stop": "Wanneer laden stopt",
+      "plug_connected": "Wanneer de kabel aangesloten wordt",
+      "plug_disconnected": "Wanneer de kabel wordt losgekoppeld",
+      "fault": "Wanneer laadpaal in fout gaat"
+    },
+    "condition_type": {
+      "is_charging": "Laadpaal is aan het laden",
+      "is_connected": "Kabel is aangesloten",
+      "is_online": "Laadpaal is online"
+    },
+    "action_type": {
+      "pause": "Laden pauzeren",
+      "resume": "Laden hervatten",
+      "set_limit": "Stroomlimiet instellen",
+      "reset": "Laadpaal herstarten"
+    }
+  },
   "entity": {
     "sensor": {
+      "charger_status":             {"name": "Status"},
       "current_session_energy":     {"name": "Energie huidige laadsessie"},
       "current_session_duration":   {"name": "Duur huidige laadsessie"},
       "current_session_driver":     {"name": "Chauffeur huidige laadsessie"},

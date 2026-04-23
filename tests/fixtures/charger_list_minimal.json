@@ -1,0 +1,12 @@
+[
+  {
+    "id": "EVB-MINIMAL",
+    "serverPartition": "test",
+    "locationId": "loc_minimal",
+    "status": "AVAILABLE",
+    "connectors": [
+      {"id": "1", "status": "AVAILABLE"}
+    ],
+    "updatedAt": "2026-04-23T15:00:00Z"
+  }
+]

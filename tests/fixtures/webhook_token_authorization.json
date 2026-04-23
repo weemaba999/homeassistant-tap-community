@@ -1,0 +1,11 @@
+{
+  "event": "TokenAuthorization",
+  "timestamp": "2026-04-23T15:00:00Z",
+  "data": {
+    "charger": {"id": "EVB-P22208163", "connectorId": "1"},
+    "token": {
+      "visualId": "CARD-****-1234",
+      "authorized": true
+    }
+  }
+}

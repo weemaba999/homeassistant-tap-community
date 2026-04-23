@@ -158,6 +158,7 @@
   },
   "entity": {
     "sensor": {
+      "charger_status":               {"name": "Status"},
       "current_session_energy":       {"name": "Current session energy"},
       "current_session_duration":     {"name": "Current session duration"},
       "current_session_driver":       {"name": "Current session driver"},

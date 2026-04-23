@@ -1,0 +1,13 @@
+{
+  "event": "SessionStarted",
+  "timestamp": "2026-04-23T15:00:00Z",
+  "data": {
+    "session": {
+      "id": "cs_webhook_test",
+      "charger": {"id": "EVB-P22208163", "connectorId": "1"},
+      "location": {"id": "loc_001575dc9f2b4780a27d2649106ca343"},
+      "wh": 0,
+      "startedAt": "2026-04-23T15:00:00Z"
+    }
+  }
+}

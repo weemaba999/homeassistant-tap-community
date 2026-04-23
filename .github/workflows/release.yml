@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build + publish release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify manifest version matches tag
+        run: |
+          manifest=$(python -c "import json; print(json.load(open('custom_components/tapelectric/manifest.json'))['version'])")
+          if [ "$manifest" != "${{ steps.version.outputs.version }}" ]; then
+            echo "manifest.json version ($manifest) does not match tag (${{ steps.version.outputs.version }})" >&2
+            exit 1
+          fi
+
+      - name: Build release zip
+        run: |
+          cd custom_components/tapelectric
+          zip -r ../../tapelectric.zip . \
+            -x "__pycache__/*" "*.pyc" ".tap.env" "*/__pycache__/*"
+          cd ../..
+          ls -la tapelectric.zip
+
+      - name: Extract latest changelog section
+        id: changelog
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import os, pathlib, re
+          text = pathlib.Path("CHANGELOG.md").read_text()
+          blocks = re.split(r"(?m)^## ", text)
+          latest = blocks[1] if len(blocks) > 1 else "See CHANGELOG.md"
+          body = "## " + latest.strip()
+          # Multiline output via delimiter
+          delim = "EOF_CHANGELOG"
+          print(f"body<<{delim}")
+          print(body)
+          print(delim)
+          PY
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: tapelectric.zip
+          body: ${{ steps.changelog.outputs.body }}
+          draft: false
+          prerelease: false

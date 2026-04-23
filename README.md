@@ -1,184 +1,236 @@
-# Tap Electric — Home Assistant custom integration
+# Tap Electric Charger — Home Assistant Community Integration
 
-Niet-officiële integratie voor de [Tap Electric](https://developer.tapelectric.app/)
-developer API. Ondersteunt:
+[![HACS Default](https://img.shields.io/badge/HACS-custom-blue.svg)](https://hacs.xyz)
+[![Validate](https://github.com/weemaba999/homeassistant-tap-community/actions/workflows/validate.yml/badge.svg)](https://github.com/weemaba999/homeassistant-tap-community/actions/workflows/validate.yml)
+[![Release](https://img.shields.io/github/v/release/weemaba999/homeassistant-tap-community?include_prereleases)](https://github.com/weemaba999/homeassistant-tap-community/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org)
 
-- 🚗 **Start / stop laadsessies** (per charger, via switch-entity of HA service)
-- 📊 **Live sessiedata** (kWh, vermogen, kost, duur) als sensor-entities
-- 📜 **Historiek** van recente sessies (laatste 20) als attribuut
-- 🔔 **Webhooks** met HMAC-SHA256 handtekeningverificatie (replay-protection)
-- 🔌 **Per-charger device** in HA, meerdere chargers ondersteund
+A community-built Home Assistant integration for EV chargers managed
+through **Tap Electric**. Runs on top of Tap's developer API for
+read/write, and — optionally — the same management API their mobile
+app uses for live session metadata.
 
-## ⚠️ Lees dit eerst
+> ⚠️ **This is an UNOFFICIAL community integration.**
+> Not affiliated with, endorsed by, or sponsored by Tap Electric B.V.
+> "Tap Electric" is a trademark of Tap Electric B.V. — this project
+> merely interoperates with their publicly-documented API.
 
-De `developer.tapelectric.app/reference` pagina wordt dynamisch gerenderd
-met JavaScript. Ik kon de exacte endpoint-paden niet zien zonder API-key.
-De integratie is gebouwd met de **meest waarschijnlijke** paden en header-
-conventies. Na installatie:
+## Screenshots
 
-1. Log in op [web.tapelectric.app](https://web.tapelectric.app) → Account →
-   API management → maak een API app → noteer de primary key.
-2. Open `https://developer.tapelectric.app/reference` met ingeplakte key
-   (Scalar heeft typisch een "Authorize" knop bovenaan).
-3. Controleer in de Reference de volgende zaken en pas aan in
-   `custom_components/tapelectric/const.py` indien nodig:
-   - **API host** (waarschijnlijk `https://api.tapelectric.app`, dit is
-     een educated guess — de Reference "Try it" knoppen tonen de exacte host)
-   - **Auth header**: `Authorization: Bearer <key>` vs `X-Api-Key` vs
-     `X-Tap-Api-Key` → zet `AUTH_SCHEME` correct
-   - **Endpoints** voor chargers, start, stop, sessions → zet de `PATH_*`
-     constanten juist
-4. Test met de standalone harness (buiten HA) om te valideren vóór install:
-   ```bash
-   cd custom_components
-   TAP_API_KEY=tap_live_xxxxx python -m tapelectric.api
-   ```
+_Screenshots pending — please PR yours if you have a good shot of the
+device page or an energy-dashboard hookup._
 
-Als deze test werkt, ga door met de installatie hieronder.
+## Features
 
-## Installatie
+- **Basic mode** (single `sk_` API key):
+  - Charger status, connector status, online / fault binary sensors
+  - Session list (configurable retention), session energy, session
+    duration, last session energy
+  - Per-measurand sensors (Energy default-enabled; Power, Current,
+    Voltage, SoC, Temperature available but default-hidden because
+    many chargers only emit a subset)
+  - Remote: pause, resume, set charge-current limit, soft/hard reset
+  - Webhook support for push updates
+- **Advanced mode** (email + password, opt-in):
+  - Live session energy (refreshes every ~30 s, no waiting for a
+    session close)
+  - Driver name, location name, started-at timestamp
+  - Richer closed-session detail (cost currency, transaction id,
+    retail tariff breakdown — surfaces on the `last_session_energy`
+    sensor's attributes with `source: "management"`)
+  - Automatic reauth prompt after 3 consecutive auth failures
+- **Localized**: English, Dutch (Belgian flavor), German (machine-
+  translated — native review welcome), French (machine-translated —
+  native review welcome)
+- **Graceful degradation**: advanced-mode hiccups never break basic
+  mode; fallback happens transparently with a `source` attribute so
+  you can tell which tier a given reading came from
 
-### Via HACS (custom repo)
-1. HACS → Integrations → ⋮ → Custom repositories
-2. URL: `https://github.com/weemaba999/tapelectric-ha` (als je dit publiek
-   zet via je RegimeLab org)
-3. Category: Integration → Add
-4. Installeer **Tap Electric** → herstart HA
+## Installation
 
-### Handmatig
-Kopieer de volledige folder `custom_components/tapelectric/` naar
-`/config/custom_components/` op je HA VM en herstart HA.
+### Via HACS
+
+1. **HACS → Integrations → ⋮ → Custom repositories**
+2. URL: `https://github.com/weemaba999/homeassistant-tap-community`
+3. Category: **Integration**
+4. **Install** → **Restart Home Assistant**
+
+### Manual
+
+Copy `custom_components/tapelectric/` into your HA config folder and
+restart:
 
 ```
 /config/custom_components/tapelectric/
-├── __init__.py
-├── api.py
-├── config_flow.py
-├── const.py
-├── coordinator.py
-├── manifest.json
-├── sensor.py
-├── services.yaml
-├── strings.json
-├── switch.py
-└── webhook.py
+    __init__.py, api.py, api_management.py, auth_firebase.py,
+    binary_sensor.py, button.py, config_flow.py, const.py,
+    coordinator.py, device_action.py, device_condition.py,
+    device_trigger.py, manifest.json, number.py, ocpp.py, repairs.py,
+    select.py, sensor.py, services.yaml, strings.json, switch.py,
+    webhook.py, translations/
 ```
 
-## Configuratie
+## Configuration
 
-Settings → Devices & Services → **Add Integration** → zoek "Tap Electric".
+**Settings → Devices & Services → Add Integration → Tap Electric Charger**.
 
-| Veld           | Uitleg                                                        |
-|----------------|---------------------------------------------------------------|
-| API key        | Primary API key uit het Tap dashboard                         |
-| Base URL       | Standaard `https://api.tapelectric.app` — enkel wijzigen indien nodig |
-| Charger ID     | Optioneel: beperk scope tot één charger (handig bij fleet)    |
-| Webhook secret | Optioneel: activeert push-updates via webhooks                |
+### Basic mode setup
 
-Webhook URL voor het Tap-dashboard: `https://<jouw-ha>.ui.nabu.casa/api/webhook/<webhook_id>`.
-Het `webhook_id` verschijnt in `hass.data` en in de logs bij opstart.
+1. Create an API app at **web.tapelectric.app → Account → API management**.
+2. Paste the `sk_...` primary API key.
+3. (Optional) **Base URL**, **Charger ID** (to scope the integration
+   to a single charger), **Webhook secret**.
+4. When asked about advanced mode, choose **No** to finish with
+   basic-only mode.
 
-## Services
+### Advanced mode setup (optional)
 
-### `tapelectric.start_charging`
-```yaml
-service: tapelectric.start_charging
-data:
-  charger_id: TAP-ABCDE-X
-  connector_id: 1       # optioneel, default 1
-  token_id: NL-TAP-C12345-6   # optioneel
-```
+Advanced mode uses your regular Tap Electric app credentials (email +
+password) to exchange for a Firebase refresh token. Tap sees this as
+an app-style sign-in from Home Assistant.
 
-### `tapelectric.stop_charging`
-```yaml
-service: tapelectric.stop_charging
-data:
-  charger_id: TAP-ABCDE-X
-  session_id: sess_abc   # optioneel, anders actieve sessie
-```
+- During initial setup: answer **Yes** to "Enable advanced mode?" and
+  enter email + password.
+- After setup: **Configure → Advanced mode → Enable**.
 
-## Entities per charger
+Your password is **never stored** — only the refresh token that Tap
+issues is persisted in your config entry. If the refresh token is
+later revoked, HA triggers a reauth flow and prompts for the password
+once more.
 
-| Entity                                    | Type    | Beschrijving                       |
-|-------------------------------------------|---------|------------------------------------|
-| `switch.tap_charger_<naam>_charging`      | Switch  | On = charging, toggle start/stop   |
-| `sensor.tap_charger_<naam>_status`        | Sensor  | Charger status (Available/Charging/…) |
-| `sensor.tap_charger_<naam>_session_energy`| Energy  | kWh van actieve sessie             |
-| `sensor.tap_charger_<naam>_session_power` | Power   | kW actueel                         |
-| `sensor.tap_charger_<naam>_session_duration` | — | Minuten                            |
-| `sensor.tap_charger_<naam>_session_cost`  | Sensor  | Kost actieve sessie                |
-| `sensor.tap_charger_<naam>_last_session_energy` | Energy | kWh laatste afgeronde sessie |
+### Options
 
-## Webhook events
+**Configure → General settings** exposes:
 
-Bij een correct geconfigureerde webhook worden HA events gefired:
+| Option | Default | Range |
+| --- | --- | --- |
+| Active scan interval (s) | 30 | 10 – 300 |
+| Idle scan interval (s) | 300 | 60 – 3600 |
+| Session history limit | 50 | 10 – 500 |
+| Meter data limit per session | 100 | 20 – 500 |
+| Measurand stale threshold (min) | 15 | 5 – 120 |
+| Energy decimals | 3 | 0 – 3 |
+| Power decimals | 2 | 0 – 3 |
+| Enable write operations | On | — |
 
-- `tapelectric_webhook` — alle events
-- `tapelectric_sessionstarted`, `tapelectric_sessionended`,
-  `tapelectric_sessionupdated`, `tapelectric_tokenauthorization`
+Flipping **Enable write operations** off makes the whole integration
+read-only. Pause/resume, limit, reset, and external meter push will
+raise an HA Repairs issue instead of calling the API.
 
-Voorbeeld automation:
+## Entity reference
 
-```yaml
-alias: "Notify on EV charging start"
-trigger:
-  - platform: event
-    event_type: tapelectric_sessionstarted
-action:
-  - service: notify.mobile_app
-    data:
-      message: "Sessie gestart op {{ trigger.event.data.chargerId }}"
-```
+Entities are created per charger. Names use HA's `has_entity_name`
+convention — the device name stays "Tap Charger &lt;id prefix&gt;"
+(or the charger's friendly name when available), and entities surface
+as **Status**, **Charging**, **Plug connected**, etc.
 
-## Dynamische tariffen (bonus)
+| Entity | Platform | Default enabled | Data source | Notes |
+| --- | --- | --- | --- | --- |
+| Status | sensor | ✔ | public | Composite: connector wins over stale charger.status |
+| Connector status | sensor | ✔ | public | Most-interesting-wins across connectors |
+| Session energy | sensor | ✔ | public (fallback mgmt) | kWh; live during session |
+| Session duration | sensor | ✔ | public | Minutes since startedAt |
+| Last session energy | sensor | ✔ | **mgmt preferred**, public fallback | `source` attribute tells you which |
+| Energy (active import register) | sensor | ✔ | public meter-data | OCPP measurand |
+| Energy (short form) | sensor | ✔ | public meter-data | Some firmwares emit `Energy` instead of the long form |
+| Energy interval / export, Power\*, Current\*, Voltage, SoC, Temperature, Frequency, Power factor | sensor | ✖ | public meter-data | See [charger compatibility](#hardware-compatibility) — enable per your hardware |
+| Info | sensor | ✖ | public | Charger metadata (firmware, serial, partition) |
+| Active tariff | sensor | ✖ | public | Only populated when Tap exposes a tariff for your scope |
+| Current session energy | sensor | ✔ | mgmt | Advanced mode only |
+| Current session duration | sensor | ✔ | mgmt | Advanced mode only |
+| Current session started at | sensor | ✔ | mgmt | Advanced mode only |
+| Current session driver | sensor | ✖ | mgmt | Advanced mode only, fleet installs |
+| Current session location | sensor | ✖ | mgmt | Advanced mode only |
+| Online | binary_sensor | ✔ | public | Connectivity to Tap cloud |
+| Fault | binary_sensor | ✔ | public | Charger or connector fault |
+| Plug connected | binary_sensor | ✔ | public | Per-connector |
+| Charging | binary_sensor | ✔ | mgmt preferred | With `source` attribute |
+| Charging allowed | switch | ✔ | public | Pause / resume via OCPP SetChargingProfile |
+| Charge current limit | number | ✔ | public | Slider; persisted in entry.data |
+| Auto-stop kWh / minutes / cost | number | ✖ | HA-local | Blueprint-driven thresholds |
+| Reset | button | ✔ | public | OCPP Reset via dedicated endpoint |
+| Reset type | select | ✖ | HA-local | Soft / Hard — preselects for the reset button |
 
-Je hebt interesse in Charge Control via dynamische tarieven (zoals in de
-Tap docs vermeld voor NL+BE). Overweeg een automation die de sessie
-pauzeert als je energy-price hoog staat:
+## Hardware compatibility
 
-```yaml
-trigger:
-  - platform: numeric_state
-    entity_id: sensor.entsoe_current_price
-    above: 0.35
-condition:
-  - condition: state
-    entity_id: switch.tap_charger_thuis_charging
-    state: "on"
-action:
-  - service: tapelectric.stop_charging
-    data:
-      charger_id: "{{ state_attr('switch.tap_charger_thuis_charging', 'charger_id') }}"
-```
+This table is community-maintained. PRs welcome.
+
+| Charger model | Confirmed features | Missing measurands | Notes |
+| --- | --- | --- | --- |
+| **EVBox Elvi** | status, sessions, Energy, remote reset | Power, Current, Voltage, SoC, Temperature | Firmware only emits `Energy` OCPP measurand. Default-disabled entities will stay Unavailable — leave them off unless you want them exposed for history. |
+| Alfen | — (untested) | — | Expected full measurand set based on OCPP 1.6 spec. |
+| Wallbox | — (untested) | — | |
+| Zaptec | — (untested) | — | |
+
+## Known limitations
+
+- **EVBox Elvi publishes only the `Energy` OCPP measurand.** Power,
+  Current, Voltage, SoC, and Temperature entities ship disabled-by-
+  default; they activate automatically when the entity is enabled in
+  the registry and a reading comes in.
+- **`GET /charger-sessions/{id}` returns 404** on the public API
+  (confirmed 2026-04-23 against api.tapelectric.app). Single-session
+  detail is only available via the management API / advanced mode.
+  See [`docs/API_INVENTORY.md`](docs/API_INVENTORY.md) for the full
+  reverse-engineered map.
+- **Orphan sessions** (`endedAt: null` on old rows) happen in ~22 %
+  of captured history on the test account — cars get unplugged
+  without a proper OCPP StopTransaction. The coordinator
+  cross-checks connector status before treating a dangling session
+  as live.
+- `GET /tariffs` requires a `tariffId` query param and has no list
+  form; the integration no longer polls it. Retail tariff data, when
+  present, surfaces via the management API's session detail.
+- Brand assets are intentionally absent — the integration shows the
+  generic HA icon. See [`brands/README.md`](brands/README.md).
 
 ## Troubleshooting
 
-- **401 bij eerste poll** → `AUTH_SCHEME` staat verkeerd. Probeer in
-  `const.py`: `"bearer"` → `"x-api-key"` → `"x-tap-api-key"`.
-- **404 op `/chargers`** → endpoint path klopt niet. Check in Reference
-  of ze `/stations`, `/charge-points`, etc. gebruiken en pas
-  `PATH_CHARGERS_LIST` aan.
-- **Sensors blijven leeg** → de veldnamen in de JSON response matchen
-  niet. Activeer debug logging:
-  ```yaml
-  logger:
-    logs:
-      custom_components.tapelectric: debug
-  ```
-  Copy-paste een response uit `custom_components.tapelectric.api` DEBUG
-  en stuur door — dan kan de sensor-mapping aangepast worden.
+1. Enable debug logging:
+   ```yaml
+   logger:
+     default: info
+     logs:
+       custom_components.tapelectric: debug
+   ```
+2. Common pitfalls:
+   - **401 repeatedly** → Your sk_ key was revoked. Regenerate it
+     and reconfigure.
+   - **Advanced-mode "degraded" log messages** → Management API is
+     temporarily unreachable. Entities fall back to basic data. Will
+     self-recover on the next successful tick.
+   - **Entities Unavailable** → For measurands your charger doesn't
+     emit, this is expected. Disable the entity or ignore.
+   - **Writes failing with "writes disabled" Repairs issue** → Go
+     back to **Configure → General → Enable write operations**.
 
-## Niet bevestigd in de docs
+## Contributing
 
-Deze items konden niet uit de publieke docs gehaald worden en zijn
-inschattingen op basis van standaard EV-API conventies:
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for dev setup, test
+commands, and PR guidelines.
 
-| Item | Status |
-|------|--------|
-| API host | Onbevestigd (`api.tapelectric.app` is een inschatting) |
-| Auth header | Onbevestigd (`Bearer` is de inschatting) |
-| Endpoint paths | Onbevestigd (standaard REST/OCPP conventies) |
-| Query param namen (from/to/limit) | Onbevestigd |
-| Response veldnamen (`chargerId` vs `charger_id` vs `id`) | De code probeert meerdere varianten |
-| HMAC webhook verificatie | ✅ **Bevestigd** uit de Basics-pagina van de docs |
-| Webhook event schema | Deels bevestigd (`TokenAuthorization` voorbeeld), de rest ingeschat |
+The short version:
+
+```bash
+git clone https://github.com/weemaba999/homeassistant-tap-community
+cd homeassistant-tap-community
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements_test.txt
+pytest -q
+```
+
+## License
+
+[MIT](LICENSE). See also the [acknowledgements](#acknowledgements)
+below regarding third-party trademarks.
+
+## Acknowledgements
+
+- **Tap Electric B.V.** — for the public developer API. This
+  integration talks to that API in good faith; the Tap name and
+  logo are their property.
+- **Home Assistant** — for the best open-source home automation
+  platform on Earth.
+- **Contributors** — listed in GitHub's contributors view. Thanks
+  for every PR, bug report, and hardware-compatibility datapoint.

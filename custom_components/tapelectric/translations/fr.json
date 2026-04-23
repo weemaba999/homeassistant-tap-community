@@ -1,6 +1,16 @@
 {
   "config": {
     "step": {
+      "user": {
+        "title": "Tap Electric",
+        "description": "Créez une app API sur web.tapelectric.app → Compte → Gestion de l'API et collez la clé API principale ci-dessous.",
+        "data": {
+          "api_key": "Clé API",
+          "base_url": "URL de base de l'API",
+          "charger_id": "ID de la borne (optionnel — limite à une borne)",
+          "webhook_secret": "Secret du webhook (optionnel — active les mises à jour push)"
+        }
+      },
       "advanced_ask": {
         "title": "Activer le mode avancé ?",
         "description": "Le mode avancé est optionnel. Il utilise votre identifiant Tap (e-mail + mot de passe) pour débloquer l'énergie de session en direct et les métadonnées riches via l'API de gestion Tap. Vous pouvez l'activer ou le désactiver plus tard dans les Options.",
@@ -23,14 +33,16 @@
       }
     },
     "error": {
+      "auth": "Clé API invalide.",
+      "cannot_connect": "Impossible de joindre l'API Tap Electric. Vérifiez l'URL de base.",
       "invalid_email": "Cette adresse e-mail n'est pas enregistrée chez Tap.",
       "invalid_password": "Mot de passe incorrect.",
       "user_disabled": "Ce compte Tap est désactivé.",
       "firebase_unknown": "Échec de l'authentification Firebase.",
-      "account_discovery_failed": "Connecté, mais impossible de déterminer le compte Tap.",
-      "cannot_connect": "Impossible de joindre l'API Tap Electric."
+      "account_discovery_failed": "Connecté, mais impossible de déterminer le compte Tap."
     },
     "abort": {
+      "already_configured": "Cette clé API est déjà configurée.",
       "reauth_successful": "Mode avancé ré-authentifié.",
       "reauth_entry_missing": "L'intégration concernée n'est plus configurée."
     }
@@ -39,13 +51,29 @@
     "step": {
       "init": {
         "title": "Options Tap Electric",
+        "description": "Choisissez une section.",
         "menu_options": {
           "general": "Paramètres généraux",
           "advanced_menu": "Mode avancé"
         }
       },
+      "general": {
+        "title": "Paramètres généraux",
+        "description": "Réglez le polling, la fraîcheur et le rendu. 'write_enabled' gère toutes les écritures — désactivez-le pour un mode lecture seule.",
+        "data": {
+          "scan_interval_active_s": "Intervalle de polling actif (s)",
+          "scan_interval_idle_s": "Intervalle de polling inactif (s)",
+          "sessions_history_limit": "Nombre de sessions à conserver",
+          "meter_data_limit": "Limite de données du compteur par session",
+          "stale_threshold_minutes": "Seuil d'obsolescence des mesures (min)",
+          "round_energy_decimals": "Décimales pour l'énergie",
+          "round_power_decimals": "Décimales pour la puissance",
+          "write_enabled": "Autoriser les actions d'écriture"
+        }
+      },
       "advanced_menu": {
         "title": "Mode avancé",
+        "description": "Le mode avancé utilise votre identifiant Tap pour l'énergie et les métadonnées de session en direct. Activez, mettez à jour ou désactivez ici.",
         "menu_options": {
           "advanced_enable": "Activer le mode avancé",
           "advanced_update": "Mettre à jour les identifiants",
@@ -54,12 +82,78 @@
       },
       "advanced_creds": {
         "title": "Identifiants de l'application Tap",
+        "description": "Connectez-vous avec l'e-mail et le mot de passe de l'app Tap. Le mot de passe n'est pas conservé — uniquement le jeton de rafraîchissement.",
         "data": {"advanced_email": "E-mail", "password": "Mot de passe"}
       }
+    },
+    "error": {
+      "invalid_email": "Cette adresse e-mail n'est pas enregistrée chez Tap.",
+      "invalid_password": "Mot de passe incorrect.",
+      "user_disabled": "Ce compte Tap est désactivé.",
+      "firebase_unknown": "Échec de l'authentification Firebase.",
+      "account_discovery_failed": "Connecté, mais aucun compte Tap trouvé.",
+      "cannot_connect": "Impossible de joindre l'API Tap Electric."
+    }
+  },
+  "issues": {
+    "auth_expired": {
+      "title": "Clé API Tap Electric rejetée",
+      "description": "L'API Tap Electric a renvoyé 401 deux fois d'affilée. Votre clé API est probablement expirée ou révoquée. Créez-en une nouvelle sur web.tapelectric.app → Compte → Gestion de l'API et reconfigurez l'intégration."
+    },
+    "charger_offline": {
+      "title": "Borne Tap hors ligne",
+      "description": "La borne {charger_id} ne s'est plus signalée à Tap depuis plus de 24 heures. Causes probables : problème réseau, coupure de courant ou plantage firmware. Vérifiez la LED de connectivité et redémarrez si besoin."
+    },
+    "write_blocked": {
+      "title": "Écritures Tap Electric désactivées",
+      "description": "Une écriture a été demandée, mais 'write_enabled' est désactivé dans les options. Réactivez-le dans Paramètres → Appareils & Services → Tap Electric → Configurer."
+    }
+  },
+  "services": {
+    "pause_charging": {
+      "name": "Mettre la charge en pause",
+      "description": "Applique un profil de 0 A. La session continue ; la voiture ne tire pas de courant."
+    },
+    "resume_charging": {
+      "name": "Reprendre la charge",
+      "description": "Applique un profil de charge non nul."
+    },
+    "set_charging_limit": {
+      "name": "Définir la limite de charge",
+      "description": "Définit une limite de courant arbitraire."
+    },
+    "reset_charger": {
+      "name": "Redémarrer la borne",
+      "description": "Redémarre la borne (OCPP Reset)."
+    },
+    "push_external_meter_data": {
+      "name": "Transférer les données d'un compteur externe",
+      "description": "Transmet une lecture d'un compteur d'énergie externe au moteur de load balancing de Tap."
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "charging_start": "Quand la charge démarre",
+      "charging_stop": "Quand la charge s'arrête",
+      "plug_connected": "Quand le câble est branché",
+      "plug_disconnected": "Quand le câble est débranché",
+      "fault": "Quand la borne passe en défaut"
+    },
+    "condition_type": {
+      "is_charging": "La borne est en charge",
+      "is_connected": "Le câble est branché",
+      "is_online": "La borne est en ligne"
+    },
+    "action_type": {
+      "pause": "Mettre en pause",
+      "resume": "Reprendre",
+      "set_limit": "Définir la limite de courant",
+      "reset": "Redémarrer la borne"
     }
   },
   "entity": {
     "sensor": {
+      "charger_status":             {"name": "Statut"},
       "current_session_energy":     {"name": "Énergie de la session en cours"},
       "current_session_duration":   {"name": "Durée de la session en cours"},
       "current_session_driver":     {"name": "Conducteur de la session en cours"},

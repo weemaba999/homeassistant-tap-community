@@ -1,0 +1,33 @@
+[
+  {
+    "id": "CH-ALFA",
+    "serverPartition": "test",
+    "locationId": "loc_multi",
+    "status": "AVAILABLE",
+    "connectors": [
+      {"id": "1", "status": "AVAILABLE"},
+      {"id": "2", "status": "CHARGING"}
+    ],
+    "updatedAt": "2026-04-23T15:00:00Z"
+  },
+  {
+    "id": "CH-BETA",
+    "serverPartition": "test",
+    "locationId": "loc_multi",
+    "status": "UNAVAILABLE",
+    "connectors": [
+      {"id": "1", "status": "UNAVAILABLE"}
+    ],
+    "updatedAt": "2026-04-23T14:30:00Z"
+  },
+  {
+    "id": "CH-GAMMA",
+    "serverPartition": "test",
+    "locationId": "loc_multi",
+    "status": "FAULTED",
+    "connectors": [
+      {"id": "1", "status": "FAULTED"}
+    ],
+    "updatedAt": "2026-04-23T14:00:00Z"
+  }
+]

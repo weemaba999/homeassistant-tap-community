@@ -14,3 +14,4 @@ __pycache__/
 .v1-backup/
 .v2-backup/
 tests/__pycache__/
+.coverage

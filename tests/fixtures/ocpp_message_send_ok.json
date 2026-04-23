@@ -1,0 +1,7 @@
+{
+  "id": "msg_ok_test",
+  "chargerId": "EVB-P22208163",
+  "action": "SetChargingProfile",
+  "status": "Accepted",
+  "sentAt": "2026-04-23T15:00:00Z"
+}

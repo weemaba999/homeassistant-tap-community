@@ -81,30 +81,35 @@ FAULTED_CHARGER_STATES = frozenset({"FAULTED", "ERROR"})
 #
 # internal_key becomes part of unique_id, so it is FROZEN once released.
 # default_enabled controls whether the entity shows up without the user
-# explicitly enabling it in the entity registry — niche measurands (V2G
-# export, reactive power, power factor) are off by default so they don't
-# clutter the device page on vanilla home installs.
+# explicitly enabling it in the entity registry.
+#
+# Phase-C audit (2026-04-23, see docs/API_INVENTORY.md): EVBox Elvi only
+# emits the `Energy` measurand over OCPP. Assuming the Alfen/Wallbox/
+# Zaptec floor is higher than EVBox is a lossy bet for home installs.
+# Only the two energy registers are default-enabled; every other
+# measurand ships disabled and is one registry toggle away for users
+# whose charger publishes it.
 MEASURANDS: list[tuple[str, str, bool]] = [
     ("Energy.Active.Import.Register",  "energy_active_import_register", True),
     # Short form that some EVBox-class firmwares emit; same meaning as
     # Energy.Active.Import.Register but separate unique_id so we don't
     # lose data when firmware switches forms.
     ("Energy",                         "energy_short",                  True),
-    ("Energy.Active.Import.Interval",  "energy_active_import_interval", True),
+    ("Energy.Active.Import.Interval",  "energy_active_import_interval", False),
     ("Energy.Active.Export.Register",  "energy_active_export_register", False),
     ("Energy.Reactive.Import.Register","energy_reactive_import",        False),
-    ("Power.Active.Import",            "power_active_import",           True),
+    ("Power.Active.Import",            "power_active_import",           False),
     ("Power.Active.Export",            "power_active_export",           False),
-    ("Power.Offered",                  "power_offered",                 True),
+    ("Power.Offered",                  "power_offered",                 False),
     ("Power.Reactive.Import",          "power_reactive",                False),
     ("Power.Factor",                   "power_factor",                  False),
-    ("Current.Import",                 "current_import",                True),
+    ("Current.Import",                 "current_import",                False),
     ("Current.Export",                 "current_export",                False),
-    ("Current.Offered",                "current_offered",               True),
-    ("Voltage",                        "voltage",                       True),
+    ("Current.Offered",                "current_offered",               False),
+    ("Voltage",                        "voltage",                       False),
     ("Frequency",                      "frequency",                     False),
-    ("SoC",                            "soc",                           True),
-    ("Temperature",                    "temperature",                   True),
+    ("SoC",                            "soc",                           False),
+    ("Temperature",                    "temperature",                   False),
 ]
 
 MEASURAND_TO_KEY = {m[0]: m[1] for m in MEASURANDS}
