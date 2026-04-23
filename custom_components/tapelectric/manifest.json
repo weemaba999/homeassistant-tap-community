@@ -1,14 +1,18 @@
 {
   "domain": "tapelectric",
   "name": "Tap Electric Charger (Community)",
-  "version": "1.0.0",
-  "codeowners": ["@weemaba999"],
+  "codeowners": [
+    "@weemaba999"
+  ],
   "config_flow": true,
-  "dependencies": ["webhook"],
+  "dependencies": [
+    "webhook"
+  ],
   "documentation": "https://github.com/weemaba999/homeassistant-tap-community",
   "integration_type": "service",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/weemaba999/homeassistant-tap-community/issues",
   "quality_scale": "silver",
-  "requirements": []
+  "requirements": [],
+  "version": "1.0.0"
 }
