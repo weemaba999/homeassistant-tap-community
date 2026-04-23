@@ -1,0 +1,13 @@
+{
+  "domain": "tapelectric",
+  "name": "Tap Electric",
+  "version": "0.1.0",
+  "codeowners": ["@weemaba999"],
+  "config_flow": true,
+  "dependencies": ["webhook"],
+  "documentation": "https://developer.tapelectric.app/",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/weemaba999/tapelectric-ha/issues",
+  "requirements": []
+}

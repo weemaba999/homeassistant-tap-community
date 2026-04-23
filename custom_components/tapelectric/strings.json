@@ -1,0 +1,97 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Tap Electric",
+        "description": "Create an API app at web.tapelectric.app → Account → API management and paste the primary API key below.",
+        "data": {
+          "api_key": "API key",
+          "base_url": "API base URL",
+          "charger_id": "Charger ID (optional — limits scope to one charger)",
+          "webhook_secret": "Webhook secret (optional — enables push updates)"
+        }
+      }
+    },
+    "error": {
+      "auth": "Invalid API key.",
+      "cannot_connect": "Could not reach the Tap Electric API. Check the base URL."
+    },
+    "abort": {
+      "already_configured": "This API key is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Tap Electric options",
+        "description": "Tune polling, freshness, and rendering. 'write_enabled' gates every write path (pause, resume, set limit, reset, push meter data) — flip it off to make the integration read-only.",
+        "data": {
+          "scan_interval_active_s": "Active scan interval (s)",
+          "scan_interval_idle_s": "Idle scan interval (s)",
+          "sessions_history_limit": "Session history limit",
+          "meter_data_limit": "Meter data limit per session",
+          "stale_threshold_minutes": "Measurand stale threshold (min)",
+          "round_energy_decimals": "Energy decimals",
+          "round_power_decimals": "Power decimals",
+          "write_enabled": "Enable write operations"
+        }
+      }
+    }
+  },
+  "issues": {
+    "auth_expired": {
+      "title": "Tap Electric API key rejected",
+      "description": "The Tap Electric API returned 401 twice in a row. Your API key is probably expired or revoked. Create a new one at web.tapelectric.app → Account → API management and reconfigure the integration."
+    },
+    "charger_offline": {
+      "title": "Tap charger offline",
+      "description": "Charger {charger_id} hasn't reported back to Tap in over 24 hours. Likely causes: local network issue, power loss, or firmware crash. Check the charger's connectivity LED and power cycle if needed."
+    },
+    "write_blocked": {
+      "title": "Tap Electric writes disabled",
+      "description": "A write operation was requested but 'write_enabled' is off in the integration options. Toggle it back on under Settings → Devices & Services → Tap Electric → Configure."
+    }
+  },
+  "services": {
+    "pause_charging": {
+      "name": "Pause charging",
+      "description": "Apply a 0A charging profile. The session continues; the car draws no power."
+    },
+    "resume_charging": {
+      "name": "Resume charging",
+      "description": "Apply a non-zero charging profile."
+    },
+    "set_charging_limit": {
+      "name": "Set charging limit",
+      "description": "Set an arbitrary current limit."
+    },
+    "reset_charger": {
+      "name": "Reset charger",
+      "description": "Reboot the charger (OCPP Reset)."
+    },
+    "push_external_meter_data": {
+      "name": "Push external meter data",
+      "description": "Forward a reading from an external home energy meter to Tap's load balancing engine."
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "charging_start": "When charging starts",
+      "charging_stop": "When charging stops",
+      "plug_connected": "When cable is plugged in",
+      "plug_disconnected": "When cable is unplugged",
+      "fault": "When charger faulted"
+    },
+    "condition_type": {
+      "is_charging": "Charger is charging",
+      "is_connected": "Cable is connected",
+      "is_online": "Charger is online"
+    },
+    "action_type": {
+      "pause": "Pause charging",
+      "resume": "Resume charging",
+      "set_limit": "Set current limit",
+      "reset": "Reset charger"
+    }
+  }
+}

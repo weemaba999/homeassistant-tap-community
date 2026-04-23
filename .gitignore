@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+.tap.env
+*.log
+*-backup/
+.phaseA-backup/
+.phaseB-backup/
+.v1-backup/
+.v2-backup/
+tests/__pycache__/
