@@ -1,0 +1,45 @@
+blueprint:
+  name: Tap Electric — Offline alert
+  description: >
+    Notify when the charger stops reporting online for longer than the
+    configured grace period.
+  domain: automation
+  source_url: https://github.com/weemaba999/tapelectric-ha
+  input:
+    online_sensor:
+      name: Online binary sensor
+      selector:
+        entity:
+          filter:
+            domain: binary_sensor
+            integration: tapelectric
+            device_class: connectivity
+    notify_service:
+      name: Notify service
+      description: e.g. notify.mobile_app_phone
+      selector:
+        text:
+    grace_minutes:
+      name: Grace period (minutes)
+      default: 30
+      selector:
+        number: {min: 5, max: 1440, step: 5, unit_of_measurement: min}
+    message:
+      name: Message
+      default: "Tap Electric charger offline for >30 min — check network / power."
+      selector:
+        text:
+
+trigger:
+  - platform: state
+    entity_id: !input online_sensor
+    to: "off"
+    for:
+      minutes: !input grace_minutes
+
+action:
+  - service: !input notify_service
+    data:
+      message: !input message
+
+mode: single

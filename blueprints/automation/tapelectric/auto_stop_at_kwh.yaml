@@ -1,0 +1,52 @@
+blueprint:
+  name: Tap Electric — Auto-stop at kWh threshold
+  description: >
+    Pause charging automatically when the active session has delivered
+    `auto_stop_kwh` kilowatt-hours. Pair with the Tap Electric
+    `number.auto_stop_kwh` entity for an HA-local limiter.
+  domain: automation
+  source_url: https://github.com/weemaba999/tapelectric-ha
+  input:
+    session_energy_sensor:
+      name: Session energy sensor
+      selector:
+        entity:
+          filter:
+            domain: sensor
+            integration: tapelectric
+            device_class: energy
+    auto_stop_kwh:
+      name: Auto-stop threshold (kWh)
+      selector:
+        entity:
+          filter:
+            domain: number
+            integration: tapelectric
+    charge_allowed_switch:
+      name: Charging-allowed switch
+      selector:
+        entity:
+          filter:
+            domain: switch
+            integration: tapelectric
+
+trigger:
+  - platform: state
+    entity_id: !input session_energy_sensor
+
+condition:
+  - condition: template
+    value_template: >-
+      {{ (states(!input.session_energy_sensor) | float(0))
+         >= (states(!input.auto_stop_kwh) | float(0))
+         and (states(!input.auto_stop_kwh) | float(0)) > 0 }}
+  - condition: state
+    entity_id: !input charge_allowed_switch
+    state: "on"
+
+action:
+  - service: switch.turn_off
+    target:
+      entity_id: !input charge_allowed_switch
+
+mode: single

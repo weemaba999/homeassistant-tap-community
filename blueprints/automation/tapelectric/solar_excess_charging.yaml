@@ -1,0 +1,91 @@
+blueprint:
+  name: Tap Electric — Solar-excess charging
+  description: >
+    Every 30 seconds, match the charge current limit to available solar
+    excess (in amperes). Pauses charging when excess stays below the
+    minimum for longer than the `low_excess_timeout_minutes`. Resumes
+    when excess goes above the charger's minimum again.
+  domain: automation
+  source_url: https://github.com/weemaba999/tapelectric-ha
+  input:
+    solar_excess_sensor:
+      name: Solar excess sensor (in amps)
+      description: Sensor whose state is current available solar power in A.
+      selector:
+        entity:
+          filter:
+            domain: sensor
+    charge_current_limit:
+      name: Charge current limit (number entity)
+      selector:
+        entity:
+          filter:
+            domain: number
+            integration: tapelectric
+    charge_allowed_switch:
+      name: Charging-allowed switch
+      selector:
+        entity:
+          filter:
+            domain: switch
+            integration: tapelectric
+    plug_connected_sensor:
+      name: Plug-connected binary sensor
+      selector:
+        entity:
+          filter:
+            domain: binary_sensor
+            integration: tapelectric
+    min_amps:
+      name: Minimum amps
+      description: Don't draw less than this (OCPP floor is 6A).
+      default: 6
+      selector:
+        number: {min: 6, max: 16, step: 1, unit_of_measurement: A, mode: slider}
+    max_amps:
+      name: Maximum amps
+      default: 16
+      selector:
+        number: {min: 6, max: 32, step: 1, unit_of_measurement: A, mode: slider}
+    low_excess_timeout_minutes:
+      name: Pause after this long below minimum
+      default: 5
+      selector:
+        number: {min: 1, max: 30, step: 1, unit_of_measurement: min, mode: slider}
+
+trigger:
+  - platform: time_pattern
+    seconds: "/30"
+
+condition:
+  - condition: state
+    entity_id: !input plug_connected_sensor
+    state: "on"
+
+action:
+  - variables:
+      excess: "{{ states(!input.solar_excess_sensor) | float(0) }}"
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ excess >= (!input.min_amps | float) }}"
+        sequence:
+          - service: switch.turn_on
+            target:
+              entity_id: !input charge_allowed_switch
+          - service: number.set_value
+            target:
+              entity_id: !input charge_current_limit
+            data:
+              value: "{{ [excess, (!input.max_amps | float)] | min | round(0) }}"
+    default:
+      - condition: state
+        entity_id: !input plug_connected_sensor
+        state: "on"
+        for:
+          minutes: !input low_excess_timeout_minutes
+      - service: switch.turn_off
+        target:
+          entity_id: !input charge_allowed_switch
+
+mode: single
