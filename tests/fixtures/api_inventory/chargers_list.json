@@ -1,0 +1,22 @@
+{
+  "_meta": {
+    "endpoint": "GET /api/v1/chargers",
+    "status": 200,
+    "description": "list of chargers visible to this sk_ key"
+  },
+  "data": [
+    {
+      "id": "EVB-P22208163",
+      "serverPartition": "pz53nktwbzjz",
+      "locationId": "loc_001575dc9f2b4780a27d2649106ca343",
+      "status": "AVAILABLE",
+      "connectors": [
+        {
+          "id": "1",
+          "status": "SUSPENDEDEV"
+        }
+      ],
+      "updatedAt": "2026-04-23T15:32:19.8911769Z"
+    }
+  ]
+}

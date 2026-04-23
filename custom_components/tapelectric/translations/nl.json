@@ -1,0 +1,112 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Tap Electric",
+        "description": "Maak een API-app aan via web.tapelectric.app → Account → API-beheer en plak de primaire API-sleutel hieronder.",
+        "data": {
+          "api_key": "API-sleutel",
+          "base_url": "API basis-URL",
+          "charger_id": "Laderer-ID (optioneel — beperkt tot één lader)",
+          "webhook_secret": "Webhook-geheim (optioneel — activeert push-updates)"
+        }
+      },
+      "advanced_ask": {
+        "title": "Geavanceerde modus inschakelen?",
+        "description": "Geavanceerde modus is optioneel. Hij gebruikt je Tap-app-login (e-mail + wachtwoord) om live laadsessie-energie en extra sessiegegevens te tonen via de management-API van Tap. Je kan dit later altijd in- of uitschakelen via Opties.",
+        "data": {
+          "enable_advanced": "Geavanceerde modus inschakelen"
+        }
+      },
+      "advanced_creds": {
+        "title": "Tap-app-gegevens",
+        "description": "Tap ziet deze aanmelding binnenkomen vanuit Home Assistant. Je wachtwoord wordt NIET bewaard — enkel het refresh-token dat Tap terugstuurt houden we bij.",
+        "data": {
+          "advanced_email": "E-mail",
+          "password": "Wachtwoord"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Geavanceerde modus opnieuw aanmelden",
+        "description": "De geavanceerde modus voor {email} kan de sessie niet langer verversen. Geef het wachtwoord nog eens op om de live-gegevens te herstellen.",
+        "data": {
+          "password": "Wachtwoord"
+        }
+      }
+    },
+    "error": {
+      "auth": "Ongeldige API-sleutel.",
+      "cannot_connect": "Kon de Tap Electric-API niet bereiken. Controleer de basis-URL.",
+      "invalid_email": "Dat e-mailadres is niet gekend bij Tap.",
+      "invalid_password": "Wachtwoord klopt niet.",
+      "user_disabled": "Deze Tap-account is uitgeschakeld. Neem contact op met Tap-support.",
+      "firebase_unknown": "Firebase-authenticatie mislukt. Bekijk de logs voor details.",
+      "account_discovery_failed": "Aangemeld, maar we konden niet bepalen welke Tap-account je wilt gebruiken."
+    },
+    "abort": {
+      "already_configured": "Deze API-sleutel is al geconfigureerd.",
+      "reauth_successful": "Geavanceerde modus opnieuw aangemeld.",
+      "reauth_entry_missing": "De integratie waarop deze heraanmelding betrekking heeft, is niet langer geconfigureerd."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Tap Electric-opties",
+        "description": "Kies een onderdeel.",
+        "menu_options": {
+          "general": "Algemene instellingen",
+          "advanced_menu": "Geavanceerde modus"
+        }
+      },
+      "general": {
+        "title": "Algemene instellingen",
+        "description": "Stel polling, versheid en weergave in. 'write_enabled' bepaalt of de integratie mag schrijven (pauze, hervatten, limiet, reset, meterdata-push) — zet dit uit voor een alleen-lezen werking.",
+        "data": {
+          "scan_interval_active_s": "Actief poll-interval (s)",
+          "scan_interval_idle_s": "Idle poll-interval (s)",
+          "sessions_history_limit": "Aantal bewaarde sessies",
+          "meter_data_limit": "Meter-datalimiet per sessie",
+          "stale_threshold_minutes": "Verouderingsgrens voor meetwaarden (min)",
+          "round_energy_decimals": "Decimalen voor energie",
+          "round_power_decimals": "Decimalen voor vermogen",
+          "write_enabled": "Schrijfacties toestaan"
+        }
+      },
+      "advanced_menu": {
+        "title": "Geavanceerde modus",
+        "description": "De geavanceerde modus gebruikt je Tap-app-login voor live laadsessie-energie en extra gegevens. Inschakelen, gegevens bijwerken of uitschakelen kan hier.",
+        "menu_options": {
+          "advanced_enable": "Geavanceerde modus inschakelen",
+          "advanced_update": "Gegevens bijwerken",
+          "advanced_disable": "Geavanceerde modus uitschakelen"
+        }
+      },
+      "advanced_creds": {
+        "title": "Tap-app-gegevens",
+        "description": "Meld aan met de e-mail en het wachtwoord van je Tap-app. Het wachtwoord wordt niet bewaard — enkel het refresh-token.",
+        "data": {
+          "advanced_email": "E-mail",
+          "password": "Wachtwoord"
+        }
+      }
+    },
+    "error": {
+      "invalid_email": "Dat e-mailadres is niet gekend bij Tap.",
+      "invalid_password": "Wachtwoord klopt niet.",
+      "user_disabled": "Deze Tap-account is uitgeschakeld.",
+      "firebase_unknown": "Firebase-authenticatie mislukt.",
+      "account_discovery_failed": "Aangemeld, maar geen Tap-account gevonden.",
+      "cannot_connect": "Kon de Tap Electric-API niet bereiken."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "current_session_energy":     {"name": "Energie huidige laadsessie"},
+      "current_session_duration":   {"name": "Duur huidige laadsessie"},
+      "current_session_driver":     {"name": "Chauffeur huidige laadsessie"},
+      "current_session_location":   {"name": "Locatie huidige laadsessie"},
+      "current_session_started_at": {"name": "Start huidige laadsessie"}
+    }
+  }
+}

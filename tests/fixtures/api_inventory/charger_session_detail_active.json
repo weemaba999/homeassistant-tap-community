@@ -1,0 +1,9 @@
+{
+  "_meta": {
+    "endpoint": "GET /api/v1/charger-sessions/cs_9d10ef9f319548f4949cf741b913fc95",
+    "params": null,
+    "status": 404,
+    "description": "GET /charger-sessions/{id} \u2014 test if singular detail exists"
+  },
+  "data": null
+}

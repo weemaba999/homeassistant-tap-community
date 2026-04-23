@@ -22,13 +22,26 @@ from typing import Any
 import aiohttp
 from aiohttp import ClientTimeout
 
-from auth_firebase import (
-    AuthTokens,
-    TapFirebaseAuth,
-    TapFirebaseAuthError,
-    TapFirebaseInvalidCredentials,
-    TapFirebaseRefreshFailed,
-)
+# Import from the sibling module. In HA this module is loaded as
+# `custom_components.tapelectric.api_management`, so a relative import
+# resolves. In the standalone test harness the module dir is on
+# sys.path, so a bare import works. Support both.
+try:
+    from .auth_firebase import (
+        AuthTokens,
+        TapFirebaseAuth,
+        TapFirebaseAuthError,
+        TapFirebaseInvalidCredentials,
+        TapFirebaseRefreshFailed,
+    )
+except ImportError:
+    from auth_firebase import (  # type: ignore[no-redef]
+        AuthTokens,
+        TapFirebaseAuth,
+        TapFirebaseAuthError,
+        TapFirebaseInvalidCredentials,
+        TapFirebaseRefreshFailed,
+    )
 
 _LOGGER = logging.getLogger(__name__)
 

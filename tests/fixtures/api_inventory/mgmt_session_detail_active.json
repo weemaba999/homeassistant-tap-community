@@ -1,0 +1,73 @@
+{
+  "_meta": {
+    "endpoint": "GET https://tap-electric-app-api.azurewebsites.net/api/1.0/management/sessions/{session_id}",
+    "session_id_used": "cs_9d10ef9f319548f4949cf741b913fc95",
+    "status": 200,
+    "description": "detail for currently-active session"
+  },
+  "data": {
+    "id": "cs_9d10ef9f319548f4949cf741b913fc95",
+    "start_date": "2026-04-23T08:49:05Z",
+    "energy_wh": 2950,
+    "location_details": {
+      "location_id": "loc_001575dc9f2b4780a27d2649106ca343",
+      "location_name": "Pabiness AC Charger",
+      "charger_id": "EVB-P22208163",
+      "charger_name": "EVB-P22208163",
+      "evse_id": "BE*TAP*EEVBP22208163*1",
+      "address": "Russelenberg 81",
+      "city": "Tessenderlo-Ham",
+      "zip": "3980",
+      "country": "BEL",
+      "latitude": 51.06620023,
+      "longitude": 5.083456199
+    },
+    "cpo_details": {
+      "currency": "EUR",
+      "transaction_id": 10065
+    },
+    "fleet_details": {
+      "fleet_id": "fl_053f83558039463e853bba1e4916708a",
+      "fleet_name": "Laadpas Bart",
+      "currency": "EUR",
+      "reimbursement": {
+        "amount": 1.33,
+        "currency": "EUR"
+      },
+      "retail_tariff": {
+        "tariff_id": "free_tariff",
+        "vat_pct": 21,
+        "tap_pct": 0,
+        "transaction_fee_percentage": 0.0,
+        "currency": "EUR",
+        "price_per_hour": 0,
+        "price_per_kwh": 0,
+        "price_per_parking_hour": 0,
+        "start_price": 0,
+        "hour": 0.0,
+        "flat": 0.0,
+        "kwh": 0.0,
+        "idle_hour": 0.0,
+        "fleet_name": "Laadpas Bart",
+        "window_start": "2026-04-23T15:40:53",
+        "cases": [
+          {
+            "prices": [
+              {
+                "flat": 0.0,
+                "kwh": 0.0,
+                "hour": 0.0,
+                "idle_hour": 0.0,
+                "element_ids": [
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "predicted_session_cost": null,
+        "pre_authorization_options": null
+      }
+    }
+  }
+}

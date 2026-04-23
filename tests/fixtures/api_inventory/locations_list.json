@@ -1,0 +1,15 @@
+{
+  "_meta": {
+    "endpoint": "GET /api/v1/locations",
+    "params": null,
+    "status": 200,
+    "description": "GET /locations"
+  },
+  "data": [
+    {
+      "id": "loc_001575dc9f2b4780a27d2649106ca343",
+      "latitude": 0,
+      "longitude": 0
+    }
+  ]
+}

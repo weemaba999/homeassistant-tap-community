@@ -1,0 +1,67 @@
+{
+  "_meta": {
+    "endpoint": "GET https://tap-electric-app-api.azurewebsites.net/api/1.0/management/accounts",
+    "params": {
+      "take": 5,
+      "offset": 0,
+      "includeConnectedAccounts": "true"
+    },
+    "status": 200,
+    "description": "user's accounts \u2014 returns macc_... ids + metadata"
+  },
+  "data": [
+    {
+      "id": "macc_bdca966df857434e96ea51e204824815",
+      "organization_name": "Pabiness BV",
+      "reseller_account_id": "macc_1ca8c2295e854ed5a0b579dc3024c7d5",
+      "banners": [],
+      "operator_name": "Pabiness BV",
+      "profile": "other",
+      "address_line1": "Russelenberg 81",
+      "account_role": "Organization",
+      "account_type": "Main",
+      "zip": "3980",
+      "city": "TESSENDERLO-HAM",
+      "country": "BEL",
+      "email": "bart.weemaels@gmail.com",
+      "websocket_url": "deprecated",
+      "connected_accounts": [],
+      "country_settings": [
+        {
+          "country": "BEL",
+          "default_language": "nl",
+          "tax_settings": {
+            "vat_id": "BE0827502050",
+            "tax_mode": "reverse_charge_vat"
+          },
+          "payout_settings": {
+            "payout_method": "bank",
+            "stripe_settings": null,
+            "bank_settings": {
+              "iban": "BE33132548467646",
+              "bic": "BNAGBEBB",
+              "account_number": null,
+              "sort_code": null,
+              "account_holder": "Bart Weemaels"
+            },
+            "payout_reference": "Onkosten"
+          },
+          "payment_settings": {
+            "is_manual_payment_allowed": true,
+            "selected_payment_type": "MANUAL"
+          },
+          "coc_id": "827502050",
+          "po_number": null
+        }
+      ],
+      "alert_settings": {
+        "send_alerts": true,
+        "alert_email": "bart.weemaels@gmail.com",
+        "charger_offline": false,
+        "security_event": true,
+        "weekly_summaries": false
+      },
+      "modules": []
+    }
+  ]
+}

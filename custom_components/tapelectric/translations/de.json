@@ -1,0 +1,70 @@
+{
+  "config": {
+    "step": {
+      "advanced_ask": {
+        "title": "Erweiterten Modus aktivieren?",
+        "description": "Der erweiterte Modus ist optional. Er verwendet Ihre Tap-App-Anmeldung (E-Mail + Passwort), um Live-Sitzungsenergie und detaillierte Metadaten über die Tap-Management-API freizuschalten. Sie können dies jederzeit in den Optionen ein- oder ausschalten.",
+        "data": {
+          "enable_advanced": "Erweiterten Modus aktivieren"
+        }
+      },
+      "advanced_creds": {
+        "title": "Tap-App-Anmeldedaten",
+        "description": "Tap sieht diese Anmeldung als von Home Assistant kommend. Ihr Passwort wird NICHT gespeichert — nur das von Tap ausgegebene Refresh-Token wird aufbewahrt.",
+        "data": {
+          "advanced_email": "E-Mail",
+          "password": "Passwort"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Erweiterten Modus erneut authentifizieren",
+        "description": "Der erweiterte Modus für {email} kann die Sitzung nicht mehr aktualisieren. Geben Sie das Passwort erneut ein.",
+        "data": {"password": "Passwort"}
+      }
+    },
+    "error": {
+      "invalid_email": "Diese E-Mail-Adresse ist bei Tap nicht registriert.",
+      "invalid_password": "Falsches Passwort.",
+      "user_disabled": "Dieses Tap-Konto ist deaktiviert.",
+      "firebase_unknown": "Firebase-Authentifizierung fehlgeschlagen.",
+      "account_discovery_failed": "Anmeldung erfolgreich, aber kein Tap-Konto gefunden.",
+      "cannot_connect": "Tap Electric API nicht erreichbar."
+    },
+    "abort": {
+      "reauth_successful": "Erweiterter Modus erneut authentifiziert.",
+      "reauth_entry_missing": "Die Integration für diese Re-Authentifizierung existiert nicht mehr."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Tap Electric Optionen",
+        "menu_options": {
+          "general": "Allgemeine Einstellungen",
+          "advanced_menu": "Erweiterter Modus"
+        }
+      },
+      "advanced_menu": {
+        "title": "Erweiterter Modus",
+        "menu_options": {
+          "advanced_enable": "Erweiterten Modus aktivieren",
+          "advanced_update": "Anmeldedaten aktualisieren",
+          "advanced_disable": "Erweiterten Modus deaktivieren"
+        }
+      },
+      "advanced_creds": {
+        "title": "Tap-App-Anmeldedaten",
+        "data": {"advanced_email": "E-Mail", "password": "Passwort"}
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "current_session_energy":     {"name": "Aktuelle Sitzungsenergie"},
+      "current_session_duration":   {"name": "Aktuelle Sitzungsdauer"},
+      "current_session_driver":     {"name": "Aktueller Sitzungsfahrer"},
+      "current_session_location":   {"name": "Aktueller Sitzungsstandort"},
+      "current_session_started_at": {"name": "Aktueller Sitzungsstart"}
+    }
+  }
+}

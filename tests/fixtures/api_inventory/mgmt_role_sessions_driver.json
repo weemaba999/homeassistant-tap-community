@@ -1,0 +1,23 @@
+{
+  "_meta": {
+    "endpoint": "GET https://tap-electric-app-api.azurewebsites.net/api/1.0/management/role-sessions",
+    "params": {
+      "role": "driver",
+      "offset": 0,
+      "take": 5
+    },
+    "status": 400,
+    "description": "exploratory \u2014 does role=driver return different fields?"
+  },
+  "data": {
+    "errors": {
+      "role": [
+        "The input was not valid."
+      ]
+    },
+    "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+    "title": "One or more validation errors occurred.",
+    "status": 400,
+    "traceId": "00-187e81af9d689399d6701b621c34e8ae-6f8834a94588fdb6-00"
+  }
+}

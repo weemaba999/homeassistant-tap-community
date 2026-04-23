@@ -1,0 +1,31 @@
+{
+  "_meta": {
+    "endpoint": "GET /api/v1/charger-sessions/cs_7f45d8e483ea4ba3b75723ddb7ebd15d/session-meter-data",
+    "params": {
+      "limit": 100
+    },
+    "status": 200,
+    "description": "meter data for a closed session"
+  },
+  "data": [
+    {
+      "id": "1",
+      "ocppMessageId": "317bb69f-df11-4675-b72b-41af722cbbdc",
+      "value": 9721,
+      "unit": "Wh",
+      "measurand": "Energy",
+      "chargerId": "EVB-P22208163",
+      "transactionId": "10064",
+      "measuredAt": "2026-04-22T16:41:03Z"
+    },
+    {
+      "id": "0",
+      "value": 0,
+      "unit": "Wh",
+      "measurand": "Energy",
+      "chargerId": "EVB-P22208163",
+      "transactionId": "10064",
+      "measuredAt": "2026-04-22T10:54:33Z"
+    }
+  ]
+}

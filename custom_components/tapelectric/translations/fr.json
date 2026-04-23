@@ -1,0 +1,70 @@
+{
+  "config": {
+    "step": {
+      "advanced_ask": {
+        "title": "Activer le mode avancé ?",
+        "description": "Le mode avancé est optionnel. Il utilise votre identifiant Tap (e-mail + mot de passe) pour débloquer l'énergie de session en direct et les métadonnées riches via l'API de gestion Tap. Vous pouvez l'activer ou le désactiver plus tard dans les Options.",
+        "data": {
+          "enable_advanced": "Activer le mode avancé"
+        }
+      },
+      "advanced_creds": {
+        "title": "Identifiants de l'application Tap",
+        "description": "Tap verra cette connexion comme provenant de Home Assistant. Votre mot de passe n'est PAS stocké — seul le jeton de rafraîchissement fourni par Tap est conservé.",
+        "data": {
+          "advanced_email": "E-mail",
+          "password": "Mot de passe"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Ré-authentifier le mode avancé",
+        "description": "Le mode avancé pour {email} ne peut plus rafraîchir la session. Entrez à nouveau le mot de passe.",
+        "data": {"password": "Mot de passe"}
+      }
+    },
+    "error": {
+      "invalid_email": "Cette adresse e-mail n'est pas enregistrée chez Tap.",
+      "invalid_password": "Mot de passe incorrect.",
+      "user_disabled": "Ce compte Tap est désactivé.",
+      "firebase_unknown": "Échec de l'authentification Firebase.",
+      "account_discovery_failed": "Connecté, mais impossible de déterminer le compte Tap.",
+      "cannot_connect": "Impossible de joindre l'API Tap Electric."
+    },
+    "abort": {
+      "reauth_successful": "Mode avancé ré-authentifié.",
+      "reauth_entry_missing": "L'intégration concernée n'est plus configurée."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options Tap Electric",
+        "menu_options": {
+          "general": "Paramètres généraux",
+          "advanced_menu": "Mode avancé"
+        }
+      },
+      "advanced_menu": {
+        "title": "Mode avancé",
+        "menu_options": {
+          "advanced_enable": "Activer le mode avancé",
+          "advanced_update": "Mettre à jour les identifiants",
+          "advanced_disable": "Désactiver le mode avancé"
+        }
+      },
+      "advanced_creds": {
+        "title": "Identifiants de l'application Tap",
+        "data": {"advanced_email": "E-mail", "password": "Mot de passe"}
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "current_session_energy":     {"name": "Énergie de la session en cours"},
+      "current_session_duration":   {"name": "Durée de la session en cours"},
+      "current_session_driver":     {"name": "Conducteur de la session en cours"},
+      "current_session_location":   {"name": "Lieu de la session en cours"},
+      "current_session_started_at": {"name": "Début de la session en cours"}
+    }
+  }
+}

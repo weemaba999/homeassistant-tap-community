@@ -33,8 +33,20 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
+import aiohttp
+
 from .api import TapElectricAuthError, TapElectricClient, TapElectricError
+from .api_management import (
+    ManagementSession,
+    TapManagementAuthError,
+    TapManagementClient,
+    TapManagementError,
+    TapManagementNetworkError,
+)
+from .auth_firebase import TapFirebaseAuthError
 from .const import (
+    ADVANCED_IDLE_INTERVAL,
+    ADVANCED_POLL_INTERVAL,
     DEFAULT_OPTIONS,
     DOMAIN,
     OPT_METER_DATA_LIMIT,
@@ -52,6 +64,17 @@ from .repairs import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _newer(a: datetime | None, b: datetime | None) -> bool:
+    """Return True if `a` is strictly more recent than `b`, treating
+    missing timestamps as 'oldest possible'."""
+    if a is None:
+        return False
+    if b is None:
+        return True
+    return a > b
+
 
 # Key for the reduced meter map: (measurand, phase_or_None)
 MeterKey = tuple[str, str | None]
@@ -72,6 +95,21 @@ class TapData:
     # enumerable. Kept on the dataclass so TariffSensor stays import-
     # and registration-safe even when empty.
     tariffs: list[dict] = field(default_factory=list)
+
+    # Advanced-mode overlays. Populated only when the coordinator has a
+    # working TapManagementClient and the management fetch succeeds on
+    # the current tick. Absent keys mean "no data for this charger" —
+    # entities should fall back to the public data (is_charging binary
+    # sensor already does).
+    mgmt_active_by_charger: dict[str, ManagementSession | None] = field(
+        default_factory=dict,
+    )
+    mgmt_last_closed_by_charger: dict[str, ManagementSession | None] = field(
+        default_factory=dict,
+    )
+    # True when the last successful tick had a working management fetch.
+    # Sensors check this to decide "am I allowed to trust mgmt_active?"
+    mgmt_fresh: bool = False
 
     def charger(self, charger_id: str) -> dict | None:
         for c in self.chargers:
@@ -101,6 +139,29 @@ class TapData:
     def active_for(self, charger_id: str) -> dict | None:
         return self.active_by_charger.get(charger_id)
 
+    def mgmt_active(self, charger_id: str) -> ManagementSession | None:
+        """Advanced-mode active session (None when mgmt is off or stale)."""
+        if not self.mgmt_fresh:
+            return None
+        return self.mgmt_active_by_charger.get(charger_id)
+
+    def mgmt_last_closed(self, charger_id: str) -> ManagementSession | None:
+        """Most recent closed session per management API, if any."""
+        if not self.mgmt_fresh:
+            return None
+        return self.mgmt_last_closed_by_charger.get(charger_id)
+
+    def is_charging_active(self, charger_id: str) -> bool | None:
+        """Authoritative 'is this charger charging right now?' per mgmt.
+
+        Returns None when mgmt is off or the current tick is degraded —
+        caller should fall back to the connector-status binary sensor.
+        """
+        if not self.mgmt_fresh:
+            return None
+        s = self.mgmt_active_by_charger.get(charger_id)
+        return bool(s) if s is not None else False
+
     def latest_meter(
         self, charger_id: str, measurand: str, phase: str | None = None
     ) -> dict | None:
@@ -122,11 +183,20 @@ class TapData:
 
 
 class TapCoordinator(DataUpdateCoordinator[TapData]):
+    # Trigger reauth after N consecutive management-auth failures, and
+    # at most once per cool-off period (so we don't spawn a reauth flow
+    # on every 30-second tick while the user hasn't responded yet).
+    _ADVANCED_FAILURE_REAUTH_THRESHOLD = 3
+    _ADVANCED_REAUTH_COOLDOWN = timedelta(minutes=30)
+    _DEGRADED_LOG_INTERVAL = timedelta(hours=1)
+
     def __init__(
         self,
         hass: HomeAssistant,
         client: TapElectricClient,
         entry: ConfigEntry,
+        *,
+        mgmt: TapManagementClient | None = None,
         charger_id: str | None = None,
     ) -> None:
         super().__init__(
@@ -135,10 +205,19 @@ class TapCoordinator(DataUpdateCoordinator[TapData]):
             update_interval=timedelta(seconds=DEFAULT_OPTIONS[OPT_SCAN_INTERVAL_IDLE_S]),
         )
         self.client = client
+        self.mgmt = mgmt
         self.entry = entry
         self.scope_charger_id = charger_id
         self._cold_fetched: dict[str, str] = {}
         self._consecutive_auth_failures = 0
+
+        # Advanced-mode bookkeeping. Only meaningful when self.mgmt is
+        # not None, but initialised unconditionally so the rest of the
+        # class doesn't need branches.
+        self._advanced_failures = 0
+        self._last_reauth_trigger: datetime | None = None
+        self._advanced_degraded_since: datetime | None = None
+        self._advanced_last_degraded_log: datetime | None = None
 
     # ── option accessors ───────────────────────────────────────────────
 
@@ -241,12 +320,27 @@ class TapCoordinator(DataUpdateCoordinator[TapData]):
         if tasks:
             await asyncio.gather(*tasks)
 
-        # Tick-based interval: active (short) when any charger is plugged,
-        # idle (long) otherwise.
-        any_active = any(v is not None for v in active_by_charger.values())
-        new_interval = timedelta(seconds=int(self._opt(
-            OPT_SCAN_INTERVAL_ACTIVE_S if any_active else OPT_SCAN_INTERVAL_IDLE_S
-        )))
+        # Advanced-mode fetch (management API). Never allowed to fail
+        # the whole coordinator — degrade silently, log rate-limited.
+        mgmt_active, mgmt_closed, mgmt_ok = await self._fetch_mgmt_sessions(
+            {c.get("id") for c in chargers if c.get("id")},
+        )
+
+        # Tick-based interval. In advanced mode we switch to the
+        # dedicated ADVANCED_POLL/IDLE cadence so the user gets 30-s
+        # updates on live sessions regardless of basic-mode options.
+        any_active_basic = any(v is not None for v in active_by_charger.values())
+        any_active_mgmt = any(v is not None for v in mgmt_active.values())
+        any_active = any_active_basic or any_active_mgmt
+
+        if self.mgmt is not None and mgmt_ok:
+            new_interval = timedelta(seconds=(
+                ADVANCED_POLL_INTERVAL if any_active else ADVANCED_IDLE_INTERVAL
+            ))
+        else:
+            new_interval = timedelta(seconds=int(self._opt(
+                OPT_SCAN_INTERVAL_ACTIVE_S if any_active else OPT_SCAN_INTERVAL_IDLE_S
+            )))
         if new_interval != self.update_interval:
             self.update_interval = new_interval
 
@@ -259,7 +353,139 @@ class TapCoordinator(DataUpdateCoordinator[TapData]):
             meter_by_charger=meter_by_charger,
             active_by_charger=active_by_charger,
             tariffs=tariffs,
+            mgmt_active_by_charger=mgmt_active,
+            mgmt_last_closed_by_charger=mgmt_closed,
+            mgmt_fresh=mgmt_ok,
         )
+
+    # ── Advanced mode / management fetch ───────────────────────────────
+
+    async def _fetch_mgmt_sessions(
+        self, charger_ids: set[str],
+    ) -> tuple[
+        dict[str, ManagementSession | None],
+        dict[str, ManagementSession | None],
+        bool,
+    ]:
+        """Fetch + bucketise management sessions per charger.
+
+        Returns (active_by_cid, last_closed_by_cid, ok). On any failure
+        `ok` is False and both dicts are empty — callers then use
+        mgmt_fresh=False and fall back to basic-mode data.
+        """
+        empty: dict[str, ManagementSession | None] = {}
+        if self.mgmt is None:
+            return empty, empty, False
+
+        try:
+            sessions = await self.mgmt.list_role_sessions(take=20)
+        except (TapManagementAuthError, TapFirebaseAuthError) as err:
+            self._advanced_failures += 1
+            _LOGGER.warning(
+                "Advanced-mode auth failed (%d/%d): %s",
+                self._advanced_failures,
+                self._ADVANCED_FAILURE_REAUTH_THRESHOLD, err,
+            )
+            if self._advanced_failures >= self._ADVANCED_FAILURE_REAUTH_THRESHOLD:
+                self._maybe_trigger_reauth()
+            self._mark_degraded(err)
+            return empty, empty, False
+        except (
+            TapManagementNetworkError,
+            TapManagementError,
+            aiohttp.ClientError,
+            asyncio.TimeoutError,
+        ) as err:
+            self._mark_degraded(err)
+            return empty, empty, False
+
+        # Success — reset auth-failure counter + degradation state.
+        self._advanced_failures = 0
+        if self._advanced_degraded_since is not None:
+            _LOGGER.info("Advanced mode recovered after degradation.")
+        self._advanced_degraded_since = None
+        self._advanced_last_degraded_log = None
+
+        active_by_cid, closed_by_cid = self.bucketise_mgmt_sessions(
+            sessions, charger_ids,
+        )
+        return active_by_cid, closed_by_cid, True
+
+    @staticmethod
+    def bucketise_mgmt_sessions(
+        sessions: list[ManagementSession],
+        charger_ids: set[str],
+    ) -> tuple[
+        dict[str, ManagementSession | None],
+        dict[str, ManagementSession | None],
+    ]:
+        """Pure splitter: returns (active_by_cid, closed_by_cid).
+
+        For every known charger_id, pick the single most recent active
+        session (by started_at) and the single most recent closed
+        session (by ended_at). Sessions whose charger_id isn't in the
+        set we know about are ignored.
+        """
+        active_by_cid: dict[str, ManagementSession | None] = {
+            cid: None for cid in charger_ids
+        }
+        closed_by_cid: dict[str, ManagementSession | None] = {
+            cid: None for cid in charger_ids
+        }
+        for s in sessions:
+            cid = s.charger_id
+            if not cid or cid not in charger_ids:
+                continue
+            if s.is_active:
+                prev = active_by_cid.get(cid)
+                if prev is None or _newer(s.started_at, prev.started_at):
+                    active_by_cid[cid] = s
+            else:
+                prev = closed_by_cid.get(cid)
+                if prev is None or _newer(s.ended_at, prev.ended_at):
+                    closed_by_cid[cid] = s
+        return active_by_cid, closed_by_cid
+
+    def _mark_degraded(self, err: Exception) -> None:
+        now = datetime.now(timezone.utc)
+        if self._advanced_degraded_since is None:
+            self._advanced_degraded_since = now
+        # Rate-limit the log to once per hour.
+        last = self._advanced_last_degraded_log
+        if last is None or (now - last) >= self._DEGRADED_LOG_INTERVAL:
+            _LOGGER.warning(
+                "Advanced mode degraded — falling back to basic-only data "
+                "(since %s): %s",
+                self._advanced_degraded_since.isoformat(), err,
+            )
+            self._advanced_last_degraded_log = now
+
+    def _maybe_trigger_reauth(self) -> None:
+        """Start HA's reauth flow for advanced credentials, cooled-off."""
+        now = datetime.now(timezone.utc)
+        last = self._last_reauth_trigger
+        if last is not None and (now - last) < self._ADVANCED_REAUTH_COOLDOWN:
+            return
+        self._last_reauth_trigger = now
+        _LOGGER.warning(
+            "Starting advanced-mode re-authentication flow after %d "
+            "consecutive auth failures.", self._advanced_failures,
+        )
+        try:
+            # HA ≥ 2024.11 API; falls back to legacy helper if unavailable.
+            self.entry.async_start_reauth(self.hass)
+        except AttributeError:
+            # Pre-2024.11 — fire manually.
+            self.hass.async_create_task(
+                self.hass.config_entries.flow.async_init(
+                    DOMAIN,
+                    context={
+                        "source": "reauth",
+                        "entry_id": self.entry.entry_id,
+                    },
+                    data={**self.entry.data},
+                )
+            )
 
     def _reconcile_offline_issues(self, chargers: list[dict]) -> None:
         now = datetime.now(timezone.utc)

@@ -1,0 +1,9 @@
+{
+  "_meta": {
+    "endpoint": "GET /api/v1/charger-sessions/cs_7f45d8e483ea4ba3b75723ddb7ebd15d",
+    "params": null,
+    "status": 404,
+    "description": "GET /charger-sessions/{id} \u2014 on a closed session"
+  },
+  "data": null
+}

@@ -1,0 +1,701 @@
+{
+  "_meta": {
+    "endpoint": "GET /api/v1/charger-sessions",
+    "params": {
+      "limit": 50
+    },
+    "status": 200,
+    "description": "GET /charger-sessions?limit=50"
+  },
+  "data": [
+    {
+      "id": "cs_9d10ef9f319548f4949cf741b913fc95",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 0,
+      "startedAt": "2026-04-23T08:49:05Z",
+      "updatedAt": "2026-04-23T08:49:33.3020601Z"
+    },
+    {
+      "id": "cs_7f45d8e483ea4ba3b75723ddb7ebd15d",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 9721,
+      "startedAt": "2026-04-22T10:54:33Z",
+      "endedAt": "2026-04-22T16:41:03Z",
+      "updatedAt": "2026-04-23T04:03:51.330433Z"
+    },
+    {
+      "id": "cs_5b4aac07d3db4f579a1ee9a4b854d0ec",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 6387,
+      "startedAt": "2026-04-17T09:40:45Z",
+      "endedAt": "2026-04-17T13:34:17Z",
+      "updatedAt": "2026-04-18T04:03:34.4227769Z"
+    },
+    {
+      "id": "cs_2ee78d3eaa014556bca9385819c72aca",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 3452,
+      "startedAt": "2026-04-16T13:08:59Z",
+      "endedAt": "2026-04-16T15:15:49Z",
+      "updatedAt": "2026-04-17T04:01:54.852013Z"
+    },
+    {
+      "id": "cs_7abd2587b8b141f196efd052db179313",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 7450,
+      "startedAt": "2026-04-15T11:51:51Z",
+      "endedAt": "2026-04-15T16:22:30Z",
+      "updatedAt": "2026-04-16T04:03:28.0056126Z"
+    },
+    {
+      "id": "cs_7fa57a8c3837499dbc8afb52fb641b2f",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 3039,
+      "startedAt": "2026-04-15T10:15:52Z",
+      "endedAt": "2026-04-15T11:51:16Z",
+      "updatedAt": "2026-04-16T04:03:38.9990491Z"
+    },
+    {
+      "id": "cs_d95a0b7248ef4c9497d12715d56f1216",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 3034,
+      "startedAt": "2026-04-15T08:25:34Z",
+      "endedAt": "2026-04-15T10:15:16Z",
+      "updatedAt": "2026-04-16T04:04:14.3398898Z"
+    },
+    {
+      "id": "cs_441286969c9b44e58e0740a93f4b688d",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 4738,
+      "startedAt": "2026-04-14T13:24:23Z",
+      "endedAt": "2026-04-14T16:17:06Z",
+      "updatedAt": "2026-04-15T04:02:52.3829004Z"
+    },
+    {
+      "id": "cs_eea986fe1c134288a729f7798b205bc7",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 4875,
+      "startedAt": "2026-04-09T12:15:07Z",
+      "endedAt": "2026-04-09T15:11:13Z",
+      "updatedAt": "2026-04-10T04:02:26.075437Z"
+    },
+    {
+      "id": "cs_85dc7eaa1d474abf8dc8d72e3bc35257",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 16175,
+      "startedAt": "2026-04-09T07:50:34Z",
+      "endedAt": "2026-04-09T09:45:25Z",
+      "updatedAt": "2026-04-10T04:03:50.7263004Z"
+    },
+    {
+      "id": "cs_68b0768a9f0b4450a93afaf09c98db4b",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 10097,
+      "startedAt": "2026-04-08T08:31:28Z",
+      "endedAt": "2026-04-08T14:25:41Z",
+      "updatedAt": "2026-04-09T04:02:49.1152416Z"
+    },
+    {
+      "id": "cs_e7b5d6574dc34daabc33f259d84e0ea6",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 8304,
+      "startedAt": "2026-04-07T14:38:38Z",
+      "updatedAt": "2026-04-08T04:02:10.2862103Z"
+    },
+    {
+      "id": "cs_5a37b616b198468087554d3da06f2d44",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 13209,
+      "startedAt": "2026-04-07T12:47:36Z",
+      "endedAt": "2026-04-07T14:26:17Z",
+      "updatedAt": "2026-04-08T04:02:37.1939254Z"
+    },
+    {
+      "id": "cs_e9b49e1ef7084ba0831c737ecbeff99f",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 3509,
+      "startedAt": "2026-04-07T10:42:06Z",
+      "endedAt": "2026-04-07T12:46:30Z",
+      "updatedAt": "2026-04-08T04:03:15.4197591Z"
+    },
+    {
+      "id": "cs_4e6fb891dfdd478d89ce3f6c7457cfdf",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 10437,
+      "startedAt": "2026-03-29T09:16:06Z",
+      "endedAt": "2026-03-29T17:52:19Z",
+      "updatedAt": "2026-03-30T04:02:51.0591722Z"
+    },
+    {
+      "id": "cs_65cd9f3106a747b59894f55aedaf3f8b",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 8824,
+      "startedAt": "2026-03-28T12:11:05Z",
+      "endedAt": "2026-03-28T13:38:40Z",
+      "updatedAt": "2026-03-29T04:02:32.6181677Z"
+    },
+    {
+      "id": "cs_35a91b69adec4871bfbea42d72fb6fea",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 3471,
+      "startedAt": "2026-03-23T15:20:27Z",
+      "endedAt": "2026-03-23T17:31:16Z",
+      "updatedAt": "2026-03-24T04:01:43.0219116Z"
+    },
+    {
+      "id": "cs_c81b5c4b236846f1aa51390eeb952591",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 13520,
+      "startedAt": "2026-03-22T13:07:14Z",
+      "updatedAt": "2026-03-23T05:52:54.5109837Z"
+    },
+    {
+      "id": "cs_3e1bcd85e69340e3865098454efc1832",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 3659,
+      "startedAt": "2026-03-21T14:03:47Z",
+      "endedAt": "2026-03-21T16:15:00Z",
+      "updatedAt": "2026-03-22T04:02:05.4404113Z"
+    },
+    {
+      "id": "cs_610a3963c8c0469092ba5bf724895be9",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 1211,
+      "startedAt": "2026-03-21T12:25:12Z",
+      "endedAt": "2026-03-21T13:08:24Z",
+      "updatedAt": "2026-03-22T04:02:31.8793153Z"
+    },
+    {
+      "id": "cs_e7e99830c4e7454bae86261783661b0e",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 2,
+      "startedAt": "2026-03-21T12:20:36Z",
+      "endedAt": "2026-03-21T12:25:07Z",
+      "updatedAt": "2026-03-22T04:02:31.6197992Z"
+    },
+    {
+      "id": "cs_6ecec84ad2214a1a888cab2c610dfcc2",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 4584,
+      "startedAt": "2026-03-20T12:43:20Z",
+      "updatedAt": "2026-03-21T04:02:57.0147824Z"
+    },
+    {
+      "id": "cs_9ea2d7b3650046d8939e26361c2ad78f",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 6180,
+      "startedAt": "2026-03-19T11:46:40Z",
+      "endedAt": "2026-03-19T15:23:24Z",
+      "updatedAt": "2026-03-20T04:02:26.8585422Z"
+    },
+    {
+      "id": "cs_e611443bda384f13a422d281827d0c4a",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 4316,
+      "startedAt": "2026-03-18T13:11:34Z",
+      "endedAt": "2026-03-18T15:43:18Z",
+      "updatedAt": "2026-03-19T04:02:17.2317539Z"
+    },
+    {
+      "id": "cs_b8357c79f67942879351188dbe4ab0e2",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 1671,
+      "startedAt": "2026-03-18T11:48:12Z",
+      "endedAt": "2026-03-18T12:47:21Z",
+      "updatedAt": "2026-03-19T04:02:49.3929977Z"
+    },
+    {
+      "id": "cs_26fb7cad4f3b47ca88b60977c37b635e",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 1978,
+      "startedAt": "2026-03-10T14:29:55Z",
+      "endedAt": "2026-03-10T15:42:29Z",
+      "updatedAt": "2026-03-11T04:01:59.6200737Z"
+    },
+    {
+      "id": "cs_8037d9895bf6468bbb7b1aa81859d90f",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 3218,
+      "startedAt": "2026-03-08T11:59:51Z",
+      "updatedAt": "2026-03-09T04:02:27.6676311Z"
+    },
+    {
+      "id": "cs_72375f144b2b4b83ac56f7c90e857b83",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 5532,
+      "startedAt": "2026-03-07T11:10:39Z",
+      "endedAt": "2026-03-07T14:27:10Z",
+      "updatedAt": "2026-03-08T04:02:17.4643364Z"
+    },
+    {
+      "id": "cs_45ee7902cda348719311c31bc05e50d9",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 6377,
+      "startedAt": "2026-03-05T11:22:14Z",
+      "endedAt": "2026-03-05T15:07:28Z",
+      "updatedAt": "2026-03-06T04:02:58.1461806Z"
+    },
+    {
+      "id": "cs_01c60a76d8984d6c89b7b7d529bbceea",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 9793,
+      "startedAt": "2026-03-03T11:33:34Z",
+      "endedAt": "2026-03-03T18:24:24Z",
+      "updatedAt": "2026-03-04T04:02:20.4708826Z"
+    },
+    {
+      "id": "cs_3e21478e25e64b0fb907300b848b5bec",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 13094,
+      "startedAt": "2026-02-27T10:08:24Z",
+      "updatedAt": "2026-02-28T04:02:35.7390136Z"
+    },
+    {
+      "id": "cs_710ff760516d47a8b7f40028188aab72",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 5074,
+      "startedAt": "2026-02-25T14:45:46Z",
+      "updatedAt": "2026-02-26T04:02:06.4229008Z"
+    },
+    {
+      "id": "cs_a1c49a66b6b84206bc51388e13e7546c",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 8040,
+      "startedAt": "2026-02-18T12:41:28Z",
+      "updatedAt": "2026-02-19T04:02:39.26076Z"
+    },
+    {
+      "id": "cs_c6bce413e0b54887b9c74826dc5717ad",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 4208,
+      "startedAt": "2026-02-18T09:50:18Z",
+      "endedAt": "2026-02-18T12:21:12Z",
+      "updatedAt": "2026-02-19T04:03:11.1368849Z"
+    },
+    {
+      "id": "cs_e91807f8bc0e4b08b82f7f2b19056c59",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 0,
+      "startedAt": "2026-02-16T13:34:06Z",
+      "updatedAt": "2026-02-16T13:34:22.1040554Z"
+    },
+    {
+      "id": "cs_fc64f4ec77a5474c9cd0876998cb8e9e",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 26853,
+      "startedAt": "2026-02-05T11:30:09Z",
+      "updatedAt": "2026-02-06T04:02:57.9852288Z"
+    },
+    {
+      "id": "cs_1d0c2effdb0d49febb57de77fa1eb49c",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 2394,
+      "startedAt": "2026-02-05T08:02:05Z",
+      "endedAt": "2026-02-05T09:32:13Z",
+      "updatedAt": "2026-02-06T04:03:51.8817852Z"
+    },
+    {
+      "id": "cs_302f4a9fbccd40379f41fb988f3355b0",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 4490,
+      "startedAt": "2026-02-04T11:34:10Z",
+      "endedAt": "2026-02-04T14:16:30Z",
+      "updatedAt": "2026-02-05T04:02:27.1657409Z"
+    },
+    {
+      "id": "cs_95f5ed355c424d849bf530179ccb5334",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 7945,
+      "startedAt": "2026-02-01T11:33:29Z",
+      "endedAt": "2026-02-01T16:27:59Z",
+      "updatedAt": "2026-02-02T04:01:53.3636266Z"
+    },
+    {
+      "id": "cs_f3370ec55a1e4e58a12b39d2591ed5cf",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 2146,
+      "startedAt": "2026-02-01T09:17:21Z",
+      "endedAt": "2026-02-01T10:37:32Z",
+      "updatedAt": "2026-02-02T04:02:03.590658Z"
+    },
+    {
+      "id": "cs_01b15a9f03ef4eb8aabdf75f6b1d4c74",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 28422,
+      "startedAt": "2026-01-27T07:33:08Z",
+      "updatedAt": "2026-01-28T04:02:30.3048888Z"
+    },
+    {
+      "id": "cs_e84de166365b4081858ab66d61535e1f",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 29781,
+      "startedAt": "2026-01-23T09:28:31Z",
+      "endedAt": "2026-01-23T14:35:23Z",
+      "updatedAt": "2026-01-24T04:02:21.8071009Z"
+    },
+    {
+      "id": "cs_6ec8b12e097a450687e8762d4bb360be",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 5748,
+      "startedAt": "2026-01-22T10:10:07Z",
+      "endedAt": "2026-01-22T13:40:54Z",
+      "updatedAt": "2026-01-23T04:02:35.9174998Z"
+    },
+    {
+      "id": "cs_aa635ba19a9e4d878c93ac969b7f2efc",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 6105,
+      "startedAt": "2026-01-21T12:22:57Z",
+      "endedAt": "2026-01-21T13:09:31Z",
+      "updatedAt": "2026-01-22T04:01:59.1359626Z"
+    },
+    {
+      "id": "cs_7a139258533242a4a9cd07a963fbfd64",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 8796,
+      "startedAt": "2026-01-20T11:13:41Z",
+      "endedAt": "2026-01-20T16:38:17Z",
+      "updatedAt": "2026-01-21T04:01:56.8342524Z"
+    },
+    {
+      "id": "cs_5751fd95a11e4741b909eb0d613aaec0",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 28831,
+      "startedAt": "2026-01-19T09:09:36Z",
+      "endedAt": "2026-01-19T13:33:46Z",
+      "updatedAt": "2026-01-20T04:02:22.5177557Z"
+    },
+    {
+      "id": "cs_a26c8a58ae624f148fed456f7b666027",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 5219,
+      "startedAt": "2026-01-18T11:18:28Z",
+      "endedAt": "2026-01-18T14:32:37Z",
+      "updatedAt": "2026-01-19T04:01:31.9148836Z"
+    },
+    {
+      "id": "cs_85796d408cb94c9a8c54d2eda726514e",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 2915,
+      "startedAt": "2026-01-17T09:25:44Z",
+      "endedAt": "2026-01-17T11:14:36Z",
+      "updatedAt": "2026-01-18T04:02:03.567461Z"
+    },
+    {
+      "id": "cs_d08948db637843c09ffa0216eef9af64",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 10986,
+      "startedAt": "2026-01-16T13:46:34Z",
+      "endedAt": "2026-01-16T15:11:22Z",
+      "updatedAt": "2026-01-17T04:01:14.5419827Z"
+    },
+    {
+      "id": "cs_752acb1a127f4484b72bd8bbec106bd5",
+      "location": {
+        "id": "loc_001575dc9f2b4780a27d2649106ca343"
+      },
+      "charger": {
+        "id": "EVB-P22208163",
+        "connectorId": "1"
+      },
+      "wh": 1500,
+      "startedAt": "2026-01-16T10:48:22Z",
+      "endedAt": "2026-01-16T11:45:25Z",
+      "updatedAt": "2026-01-17T04:01:51.6082884Z"
+    }
+  ]
+}

@@ -188,5 +188,21 @@ class ChargingBinarySensor(_ConnectorBase):
 
     @property
     def is_on(self) -> bool:
+        # Advanced mode: the management API knows about a live session
+        # even when the OCPP connector status has lagged behind. Prefer
+        # it when available (non-None). None means "mgmt is off or the
+        # current tick is degraded" → fall back to connector status.
+        from_mgmt = self.coordinator.data.is_charging_active(self._cid)
+        if from_mgmt is not None:
+            return from_mgmt
         conn = self._connector() or {}
         return conn.get("status") == "CHARGING"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        conn = self._connector() or {}
+        from_mgmt = self.coordinator.data.is_charging_active(self._cid)
+        return {
+            "source":           "management" if from_mgmt is not None else "public",
+            "connector_status": conn.get("status"),
+        }

@@ -124,6 +124,23 @@ CONF_WEBHOOK_SECRET = "webhook_secret"
 CONF_MAX_CHARGE_AMPS = "max_charge_amps"
 CONF_MIN_CHARGE_AMPS = "min_charge_amps"
 
+# ── Advanced mode (Firebase-authenticated management API) ──────────────
+# Optional upgrade on top of the basic sk_ API key. Advanced mode enables
+# live session energy and richer session metadata via Tap's Firebase-
+# authenticated /management/* endpoints. When disabled the integration
+# behaves exactly as in phase B — basic sk_ API key only.
+CONF_ADVANCED_MODE = "advanced_mode"
+CONF_ADVANCED_EMAIL = "advanced_email"
+CONF_ADVANCED_REFRESH_TOKEN = "advanced_refresh_token"
+CONF_ADVANCED_ACCOUNT_ID = "advanced_account_id"
+CONF_ADVANCED_FIREBASE_USER_ID = "advanced_firebase_user_id"
+
+# Advanced-mode polling cadence. Independent of the public API's
+# OPT_SCAN_INTERVAL_* so that users who disable basic-mode fast polling
+# still get live session numbers on the advanced side.
+ADVANCED_POLL_INTERVAL = 30      # seconds, while any charger is active
+ADVANCED_IDLE_INTERVAL = 300     # seconds, when no session is active
+
 DEFAULT_MIN_CHARGE_AMPS = 6.0        # OCPP minimum (and EU Mode-3 minimum)
 DEFAULT_MAX_CHARGE_AMPS = 32.0       # fallback when firmware hides the rating
 

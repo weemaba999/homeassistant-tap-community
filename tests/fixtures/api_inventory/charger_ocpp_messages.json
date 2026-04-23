@@ -1,0 +1,12 @@
+{
+  "_meta": {
+    "endpoint": "GET /api/v1/chargers/{charger_id}/ocpp",
+    "params": {
+      "limit": 20
+    },
+    "charger_id_used": "EVB-P22208163",
+    "status": 200,
+    "description": "historic OCPP messages for this charger"
+  },
+  "data": []
+}

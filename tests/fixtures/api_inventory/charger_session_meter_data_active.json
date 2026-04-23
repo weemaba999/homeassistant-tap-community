@@ -1,0 +1,21 @@
+{
+  "_meta": {
+    "endpoint": "GET /api/v1/charger-sessions/cs_9d10ef9f319548f4949cf741b913fc95/session-meter-data",
+    "params": {
+      "limit": 100
+    },
+    "status": 200,
+    "description": "meter data for currently active session"
+  },
+  "data": [
+    {
+      "id": "0",
+      "value": 0,
+      "unit": "Wh",
+      "measurand": "Energy",
+      "chargerId": "EVB-P22208163",
+      "transactionId": "10065",
+      "measuredAt": "2026-04-23T08:49:05Z"
+    }
+  ]
+}

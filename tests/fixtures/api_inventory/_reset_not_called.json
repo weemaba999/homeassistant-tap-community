@@ -1,0 +1,8 @@
+{
+  "_meta": {
+    "endpoint": "POST /api/v1/chargers/{charger_id}/reset",
+    "status": "not_called",
+    "description": "Reset is a mutating endpoint (POST). The task explicitly says document only, do not invoke. Docs in inventory."
+  },
+  "data": null
+}

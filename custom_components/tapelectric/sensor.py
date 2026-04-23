@@ -34,6 +34,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
+    CONF_ADVANCED_MODE,
     DEFAULT_ENABLED,
     DOMAIN,
     MANUFACTURER,
@@ -137,6 +138,18 @@ async def async_setup_entry(
         # ── Charger metadata + tariff (both opt-in) ────────────────────
         entities.append(ChargerInfoSensor(coord, cid))
         entities.append(TariffSensor(coord, cid))
+
+        # ── Advanced-mode sensors — only registered when the entry
+        #    has opted in. Nothing created here touches the API if
+        #    mgmt is disabled; they show `unavailable` gracefully.
+        if entry.data.get(CONF_ADVANCED_MODE):
+            entities += [
+                CurrentSessionEnergySensor(coord, cid),
+                CurrentSessionDurationSensor(coord, cid),
+                CurrentSessionDriverSensor(coord, cid),
+                CurrentSessionLocationSensor(coord, cid),
+                CurrentSessionStartedAtSensor(coord, cid),
+            ]
 
     async_add_entities(entities)
 
@@ -365,7 +378,15 @@ class SessionDurationSensor(_TapBase):
 
 
 class LastSessionEnergySensor(_TapBase):
-    """Energy of the most recent COMPLETED session (endedAt set)."""
+    """Energy of the most recent COMPLETED session.
+
+    Prefers the advanced-mode management API's closed session when
+    available (live Wh, unlike /charger-sessions which reports 0 while
+    a session is running and can lag at close). Falls back to the
+    public /charger-sessions list when mgmt data is absent or stale.
+    The `source` attribute says which source the current value came
+    from so users can debug discrepancies.
+    """
     _attr_device_class = SensorDeviceClass.ENERGY
     _attr_state_class = SensorStateClass.TOTAL
     _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
@@ -376,7 +397,7 @@ class LastSessionEnergySensor(_TapBase):
         self._attr_unique_id = f"{charger_id}_last_session_energy"
         self._attr_name = "Last session energy"
 
-    def _last(self) -> dict | None:
+    def _public_last(self) -> dict | None:
         candidates = [
             s for s in self.coordinator.data.recent_sessions
             if s.get("endedAt") is not None
@@ -387,9 +408,15 @@ class LastSessionEnergySensor(_TapBase):
         candidates.sort(key=lambda s: s.get("endedAt") or "", reverse=True)
         return candidates[0]
 
+    def _mgmt_last(self):
+        return self.coordinator.data.mgmt_last_closed(self._cid)
+
     @property
     def native_value(self) -> float | None:
-        s = self._last()
+        mgmt = self._mgmt_last()
+        if mgmt is not None and mgmt.energy_kwh is not None:
+            return round(mgmt.energy_kwh, 3)
+        s = self._public_last()
         if not s:
             return None
         wh = s.get("wh")
@@ -397,13 +424,26 @@ class LastSessionEnergySensor(_TapBase):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        s = self._last() or {}
+        mgmt = self._mgmt_last()
+        if mgmt is not None and mgmt.energy_kwh is not None:
+            return {
+                "source":         "management",
+                "session_id":     mgmt.session_id,
+                "started_at":     mgmt.start_date,
+                "ended_at":       mgmt.end_date,
+                "charger_id":     mgmt.charger_id,
+                "location_name":  mgmt.location_name,
+                "fleet_driver":   mgmt.fleet_driver_name,
+                "transaction_id": mgmt.transaction_id,
+            }
+        s = self._public_last() or {}
         return {
-            "session_id": s.get("id"),
-            "started_at": s.get("startedAt"),
-            "ended_at": s.get("endedAt"),
+            "source":       "public",
+            "session_id":   s.get("id"),
+            "started_at":   s.get("startedAt"),
+            "ended_at":     s.get("endedAt"),
             "connector_id": (s.get("charger") or {}).get("connectorId"),
-            "location_id": (s.get("location") or {}).get("id"),
+            "location_id":  (s.get("location") or {}).get("id"),
         }
 
 
@@ -602,3 +642,126 @@ class TariffSensor(_TapBase):
     def extra_state_attributes(self) -> dict[str, Any]:
         t = self._active_tariff() or {}
         return {k: v for k, v in t.items() if k != "id"}
+
+
+# ── Advanced-mode sensors (advanced_mode=True required) ─────────────────
+#
+# All of these read from `coordinator.data.mgmt_active(cid)` which returns
+# None when the management fetch isn't fresh — entities then report
+# `unavailable`. State persists across a single degraded tick but the
+# stale-threshold logic is intentionally absent here: the management API
+# is the authoritative source during an advanced-mode session. If it
+# goes quiet, the entity should go silent rather than linger on stale
+# data.
+
+class _AdvancedSessionBase(_TapBase):
+    """Common `available` / mgmt-lookup plumbing for current_session_*."""
+
+    _attr_entity_registry_enabled_default = True
+
+    def _mgmt_active(self):
+        return self.coordinator.data.mgmt_active(self._cid)
+
+    @property
+    def available(self) -> bool:
+        # Available iff the last tick had a working mgmt fetch AND a
+        # session is currently running. Coordinator.is_charging_active
+        # returns None on a degraded tick.
+        active = self.coordinator.data.is_charging_active(self._cid)
+        return active is True
+
+
+class CurrentSessionEnergySensor(_AdvancedSessionBase):
+    _attr_device_class = SensorDeviceClass.ENERGY
+    # TOTAL_INCREASING: per-session counter that resets to 0 when the
+    # session ends. HA's energy dashboard handles that correctly.
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+    _attr_icon = "mdi:flash"
+
+    def __init__(self, coord: TapCoordinator, charger_id: str) -> None:
+        super().__init__(coord, charger_id)
+        self._attr_unique_id = f"{charger_id}_current_session_energy"
+        self._attr_name = "Current session energy"
+
+    @property
+    def native_value(self) -> float | None:
+        s = self._mgmt_active()
+        return round(s.energy_kwh, 3) if s and s.energy_kwh is not None else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        s = self._mgmt_active()
+        if not s:
+            return {}
+        return {
+            "session_id":  s.session_id,
+            "charger_id":  s.charger_id,
+            "raw_wh":      s.energy_wh,
+        }
+
+
+class CurrentSessionDurationSensor(_AdvancedSessionBase):
+    _attr_native_unit_of_measurement = "s"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:timer-sand"
+
+    def __init__(self, coord: TapCoordinator, charger_id: str) -> None:
+        super().__init__(coord, charger_id)
+        self._attr_unique_id = f"{charger_id}_current_session_duration"
+        self._attr_name = "Current session duration"
+
+    @property
+    def native_value(self) -> int | None:
+        s = self._mgmt_active()
+        if s is None or s.started_at is None:
+            return None
+        delta = datetime.now(timezone.utc) - s.started_at
+        return max(0, int(delta.total_seconds()))
+
+
+class CurrentSessionDriverSensor(_AdvancedSessionBase):
+    """Fleet-driver name of the active session — diagnostic."""
+    _attr_entity_registry_enabled_default = False
+    _attr_icon = "mdi:account-circle-outline"
+
+    def __init__(self, coord: TapCoordinator, charger_id: str) -> None:
+        super().__init__(coord, charger_id)
+        self._attr_unique_id = f"{charger_id}_current_session_driver"
+        self._attr_name = "Current session driver"
+
+    @property
+    def native_value(self) -> str | None:
+        s = self._mgmt_active()
+        return s.fleet_driver_name if s else None
+
+
+class CurrentSessionLocationSensor(_AdvancedSessionBase):
+    """Location name reported with the active session — diagnostic."""
+    _attr_entity_registry_enabled_default = False
+    _attr_icon = "mdi:map-marker"
+
+    def __init__(self, coord: TapCoordinator, charger_id: str) -> None:
+        super().__init__(coord, charger_id)
+        self._attr_unique_id = f"{charger_id}_current_session_location"
+        self._attr_name = "Current session location"
+
+    @property
+    def native_value(self) -> str | None:
+        s = self._mgmt_active()
+        return s.location_name if s else None
+
+
+class CurrentSessionStartedAtSensor(_AdvancedSessionBase):
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:clock-start"
+
+    def __init__(self, coord: TapCoordinator, charger_id: str) -> None:
+        super().__init__(coord, charger_id)
+        self._attr_unique_id = f"{charger_id}_current_session_started_at"
+        self._attr_name = "Current session started at"
+
+    @property
+    def native_value(self) -> datetime | None:
+        s = self._mgmt_active()
+        return s.started_at if s else None

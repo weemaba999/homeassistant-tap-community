@@ -10,8 +10,23 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
+from datetime import datetime, timezone
+
+import aiohttp
+
 from .api import TapElectricClient, TapElectricError
+from .api_management import TapManagementClient, TapManagementError
+from .auth_firebase import (
+    AuthTokens,
+    TapFirebaseAuth,
+    TapFirebaseAuthError,
+)
 from .const import (
+    CONF_ADVANCED_ACCOUNT_ID,
+    CONF_ADVANCED_EMAIL,
+    CONF_ADVANCED_FIREBASE_USER_ID,
+    CONF_ADVANCED_MODE,
+    CONF_ADVANCED_REFRESH_TOKEN,
     CONF_API_KEY,
     CONF_BASE_URL,
     CONF_CHARGER_ID,
@@ -65,6 +80,101 @@ def ensure_write_enabled(hass: HomeAssistant, entry: ConfigEntry) -> None:
         )
 
 
+async def _bootstrap_advanced_client(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    session: aiohttp.ClientSession,
+) -> TapManagementClient | None:
+    """Build a TapManagementClient from the stored refresh token.
+
+    Never raises — on any failure we log and return None. Coordinator
+    handles the None case as basic-only mode.
+    """
+    refresh_token = entry.data.get(CONF_ADVANCED_REFRESH_TOKEN)
+    if not refresh_token:
+        _LOGGER.warning(
+            "Advanced mode enabled but no refresh token stored; "
+            "falling back to basic-only.",
+        )
+        return None
+
+    auth = TapFirebaseAuth(session)
+    # Synthesise an already-expired AuthTokens so ensure_valid immediately
+    # triggers a refresh. On success Firebase rotates the refresh token —
+    # we persist the new value so the next restart uses it.
+    stub_tokens = AuthTokens(
+        id_token="",
+        refresh_token=refresh_token,
+        expires_at=datetime.now(timezone.utc),
+        user_id=entry.data.get(CONF_ADVANCED_FIREBASE_USER_ID) or "",
+        email=entry.data.get(CONF_ADVANCED_EMAIL),
+    )
+    try:
+        tokens = await auth.ensure_valid(stub_tokens)
+    except TapFirebaseAuthError as err:
+        _LOGGER.warning(
+            "Advanced-mode bootstrap refused refresh token (%s). "
+            "Re-authenticate via Options → Advanced mode. Running "
+            "basic-only for now.", err,
+        )
+        return None
+
+    # Persist the rotated refresh token (and updated profile fields).
+    new_data = {
+        **entry.data,
+        CONF_ADVANCED_REFRESH_TOKEN: tokens.refresh_token,
+    }
+    if tokens.user_id:
+        new_data[CONF_ADVANCED_FIREBASE_USER_ID] = tokens.user_id
+    if tokens.email:
+        new_data[CONF_ADVANCED_EMAIL] = tokens.email
+    if new_data != entry.data:
+        hass.config_entries.async_update_entry(entry, data=new_data)
+
+    client = TapManagementClient(
+        session, auth, tokens,
+        account_id=entry.data.get(CONF_ADVANCED_ACCOUNT_ID),
+    )
+    # If we forgot to persist account_id at setup, recover it now.
+    if client.account_id is None:
+        try:
+            await client.discover_account_id()
+            hass.config_entries.async_update_entry(
+                entry,
+                data={**entry.data,
+                      CONF_ADVANCED_ACCOUNT_ID: client.account_id,
+                      CONF_ADVANCED_REFRESH_TOKEN: client.tokens.refresh_token},
+            )
+        except TapManagementError as err:
+            _LOGGER.warning(
+                "Advanced-mode account discovery failed: %s. "
+                "Running basic-only.", err,
+            )
+            return None
+    _LOGGER.info(
+        "Advanced mode active for %s (account %s)",
+        tokens.email or "<unknown>", client.account_id,
+    )
+    return client
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Migrate old entry data. v1 → v2 adds the advanced-mode fields."""
+    if entry.version == 1:
+        new_data = {
+            **entry.data,
+            CONF_ADVANCED_MODE: False,
+        }
+        hass.config_entries.async_update_entry(
+            entry, data=new_data, version=2,
+        )
+        _LOGGER.info(
+            "Migrated Tap Electric entry from v1 to v2 "
+            "(advanced mode available as opt-in via Options).",
+        )
+    return True
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Tap Electric from a config entry."""
     session = async_get_clientsession(hass)
@@ -74,13 +184,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         base_url=entry.data.get(CONF_BASE_URL, DEFAULT_BASE_URL),
     )
 
+    # Advanced-mode management client is OPTIONAL. If bootstrap fails we
+    # keep the integration running in basic-only mode; the coordinator
+    # is built with mgmt=None and the advanced sensors stay unavailable
+    # until the user re-authenticates via Options → Advanced mode.
+    mgmt_client = None
+    if entry.data.get(CONF_ADVANCED_MODE):
+        mgmt_client = await _bootstrap_advanced_client(hass, entry, session)
+
     coordinator = TapCoordinator(
-        hass, client, entry, charger_id=entry.data.get(CONF_CHARGER_ID),
+        hass, client, entry,
+        mgmt=mgmt_client,
+        charger_id=entry.data.get(CONF_CHARGER_ID),
     )
     await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
         "client": client,
+        "mgmt": mgmt_client,
         "coordinator": coordinator,
         "entry": entry,
     }

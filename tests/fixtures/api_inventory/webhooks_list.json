@@ -1,0 +1,9 @@
+{
+  "_meta": {
+    "endpoint": "GET /api/v1/webhooks",
+    "params": null,
+    "status": 200,
+    "description": "GET /webhooks \u2014 registered webhook subscriptions"
+  },
+  "data": []
+}

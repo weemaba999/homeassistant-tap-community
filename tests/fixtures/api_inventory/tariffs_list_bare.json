@@ -1,0 +1,19 @@
+{
+  "_meta": {
+    "endpoint": "GET /api/v1/tariffs",
+    "params": null,
+    "status": 400,
+    "description": "GET /tariffs (no params \u2014 may 4xx on this scope)"
+  },
+  "data": {
+    "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+    "title": "One or more validation errors occurred.",
+    "status": 400,
+    "errors": {
+      "tariffId": [
+        "The tariffId field is required."
+      ]
+    },
+    "traceId": "00-71ec68c7bbe8dc4f5396bc45bd2b0b96-a3adee92ebfc3e05-00"
+  }
+}
