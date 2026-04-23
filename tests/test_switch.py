@@ -5,12 +5,11 @@ import asyncio
 
 import pytest
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-
 import tapelectric.switch as switch_mod
 from tapelectric.coordinator import TapData
 from tapelectric.switch import ChargeAllowedSwitch
+
+from _helpers import make_entry, make_hass
 
 
 class _FakeClient:
@@ -48,8 +47,8 @@ def _data_with_connector(status: str, *, max_amps=None):
 
 
 def _make_switch(data, hass=None, entry=None, client=None, fallback_amps=16.0):
-    hass = hass or HomeAssistant()
-    entry = entry or ConfigEntry()
+    hass = hass or make_hass()
+    entry = entry or make_entry()
     client = client or _FakeClient()
     return ChargeAllowedSwitch(
         hass, entry, _FakeCoord(data), client,

@@ -12,12 +12,11 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-
 from tapelectric.auth_firebase import TapFirebaseAuthError
 from tapelectric.api_management import TapManagementAuthError
 from tapelectric.coordinator import TapCoordinator
+
+from _helpers import make_entry, make_hass
 
 
 class _FakeMgmt:
@@ -30,7 +29,7 @@ class _FakeMgmt:
 
 class _StubCoord(TapCoordinator):
     def __init__(self, entry, mgmt):
-        self.hass = HomeAssistant()
+        self.hass = make_hass()
         self.entry = entry
         self.mgmt = mgmt
         self.client = None
@@ -49,7 +48,7 @@ def _run(coro):
 
 
 def test_reauth_only_after_threshold_failures():
-    entry = ConfigEntry()
+    entry = make_entry()
     coord = _StubCoord(
         entry, _FakeMgmt(TapManagementAuthError("401")),
     )
@@ -62,7 +61,7 @@ def test_reauth_only_after_threshold_failures():
 
 
 def test_firebase_auth_error_counts_toward_threshold():
-    entry = ConfigEntry()
+    entry = make_entry()
     coord = _StubCoord(entry, _FakeMgmt(TapFirebaseAuthError("token rot")))
     for _ in range(3):
         _run(coord._fetch_mgmt_sessions({"EVB-1"}))
@@ -70,7 +69,7 @@ def test_firebase_auth_error_counts_toward_threshold():
 
 
 def test_reauth_cooldown_prevents_spam():
-    entry = ConfigEntry()
+    entry = make_entry()
     coord = _StubCoord(entry, _FakeMgmt(TapManagementAuthError("401")))
     for _ in range(6):
         _run(coord._fetch_mgmt_sessions({"EVB-1"}))
@@ -87,7 +86,7 @@ def test_reauth_cooldown_prevents_spam():
 
 def test_network_error_does_not_trigger_reauth():
     from tapelectric.api_management import TapManagementNetworkError
-    entry = ConfigEntry()
+    entry = make_entry()
     coord = _StubCoord(entry, _FakeMgmt(TapManagementNetworkError("x")))
     for _ in range(5):
         _run(coord._fetch_mgmt_sessions({"EVB-1"}))

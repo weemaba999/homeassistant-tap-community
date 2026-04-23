@@ -14,8 +14,7 @@ from typing import Any
 import aiohttp
 import pytest
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from _helpers import make_entry, make_hass
 
 from tapelectric.api_management import (
     ManagementSession,
@@ -43,7 +42,7 @@ def _mk_session(
 class _StubCoord(TapCoordinator):
     """Bypass DataUpdateCoordinator wiring for pure-logic tests."""
     def __init__(self, mgmt, entry):
-        self.hass = HomeAssistant()
+        self.hass = make_hass()
         self.mgmt = mgmt
         self.entry = entry
         self.client = None
@@ -130,7 +129,7 @@ def test_fetch_mgmt_happy_path_marks_fresh():
         session_id="cs_1", charger_id="EVB-1", energy_wh=100,
         started_at=now - timedelta(minutes=5), ended_at=None,
     )]
-    coord = _StubCoord(mgmt=_FakeMgmt(sessions=sessions), entry=ConfigEntry())
+    coord = _StubCoord(mgmt=_FakeMgmt(sessions=sessions), entry=make_entry())
     active, closed, ok = _run(coord._fetch_mgmt_sessions({"EVB-1"}))
     assert ok is True
     assert active["EVB-1"].session_id == "cs_1"
@@ -139,7 +138,7 @@ def test_fetch_mgmt_happy_path_marks_fresh():
 
 
 def test_fetch_mgmt_no_client_returns_empty_not_ok():
-    coord = _StubCoord(mgmt=None, entry=ConfigEntry())
+    coord = _StubCoord(mgmt=None, entry=make_entry())
     active, closed, ok = _run(coord._fetch_mgmt_sessions({"EVB-1"}))
     assert ok is False
     assert active == {}
@@ -147,7 +146,7 @@ def test_fetch_mgmt_no_client_returns_empty_not_ok():
 
 
 def test_fetch_mgmt_auth_error_increments_failure_count():
-    entry = ConfigEntry()
+    entry = make_entry()
     coord = _StubCoord(
         mgmt=_FakeMgmt(raises=TapManagementAuthError("unauthorized")),
         entry=entry,
@@ -158,7 +157,7 @@ def test_fetch_mgmt_auth_error_increments_failure_count():
 
 
 def test_fetch_mgmt_auth_error_triple_triggers_reauth():
-    entry = ConfigEntry()
+    entry = make_entry()
     coord = _StubCoord(
         mgmt=_FakeMgmt(raises=TapFirebaseAuthError("token dead")),
         entry=entry,
@@ -170,7 +169,7 @@ def test_fetch_mgmt_auth_error_triple_triggers_reauth():
 
 
 def test_fetch_mgmt_reauth_cooldown_prevents_rapid_retrigger():
-    entry = ConfigEntry()
+    entry = make_entry()
     coord = _StubCoord(
         mgmt=_FakeMgmt(raises=TapFirebaseAuthError("token dead")),
         entry=entry,
@@ -185,7 +184,7 @@ def test_fetch_mgmt_reauth_cooldown_prevents_rapid_retrigger():
 def test_fetch_mgmt_network_error_degrades_silently():
     coord = _StubCoord(
         mgmt=_FakeMgmt(raises=TapManagementNetworkError("socket reset")),
-        entry=ConfigEntry(),
+        entry=make_entry(),
     )
     _, _, ok = _run(coord._fetch_mgmt_sessions({"EVB-1"}))
     assert ok is False
@@ -198,7 +197,7 @@ def test_fetch_mgmt_network_error_degrades_silently():
 def test_fetch_mgmt_client_error_degrades_silently():
     coord = _StubCoord(
         mgmt=_FakeMgmt(raises=aiohttp.ClientError("bad socket")),
-        entry=ConfigEntry(),
+        entry=make_entry(),
     )
     _, _, ok = _run(coord._fetch_mgmt_sessions({"EVB-1"}))
     assert ok is False
@@ -206,7 +205,7 @@ def test_fetch_mgmt_client_error_degrades_silently():
 
 
 def test_fetch_mgmt_recovery_clears_degraded_state():
-    entry = ConfigEntry()
+    entry = make_entry()
     coord = _StubCoord(
         mgmt=_FakeMgmt(raises=TapManagementNetworkError("x")),
         entry=entry,

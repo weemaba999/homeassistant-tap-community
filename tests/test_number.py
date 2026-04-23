@@ -5,9 +5,6 @@ import asyncio
 
 import pytest
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-
 import tapelectric.number as number_mod
 from tapelectric.coordinator import TapData
 from tapelectric.number import (
@@ -16,6 +13,8 @@ from tapelectric.number import (
     AutoStopMinutes,
     ChargeCurrentLimit,
 )
+
+from _helpers import make_entry, make_hass
 
 
 class _FakeClient:
@@ -46,10 +45,10 @@ def _data(status: str = "AVAILABLE", *, max_amps=None):
 
 
 def _make_limit(data, *, fallback_max=32.0, min_amps=6.0, entry=None, client=None):
-    entry = entry or ConfigEntry()
+    entry = entry or make_entry()
     client = client or _FakeClient()
     return ChargeCurrentLimit(
-        HomeAssistant(), entry, _FakeCoord(data), client,
+        make_hass(), entry, _FakeCoord(data), client,
         "EVB-1", 1,
         min_amps=min_amps, fallback_max=fallback_max,
     )
@@ -83,7 +82,7 @@ def test_available_only_when_plugged():
 
 def test_set_native_value_calls_client_and_persists(monkeypatch):
     monkeypatch.setattr(number_mod, "_ensure_write_enabled", lambda h, e: None)
-    entry = ConfigEntry()
+    entry = make_entry()
     client = _FakeClient()
     e = _make_limit(_data("CHARGING", max_amps=32), entry=entry, client=client)
     asyncio.run(e.async_set_native_value(10.0))
@@ -93,19 +92,19 @@ def test_set_native_value_calls_client_and_persists(monkeypatch):
 # ── AutoStop helpers ──────────────────────────────────────────────────────
 
 def test_autostop_kwh_default_zero():
-    entry = ConfigEntry()
-    e = AutoStopKWh(HomeAssistant(), entry, _FakeCoord(_data()), "EVB-1")
+    entry = make_entry()
+    e = AutoStopKWh(make_hass(), entry, _FakeCoord(_data()), "EVB-1")
     assert e.native_value == 0.0
 
 
 def test_autostop_minutes_persists(monkeypatch):
-    entry = ConfigEntry()
-    e = AutoStopMinutes(HomeAssistant(), entry, _FakeCoord(_data()), "EVB-1")
+    entry = make_entry()
+    e = AutoStopMinutes(make_hass(), entry, _FakeCoord(_data()), "EVB-1")
     asyncio.run(e.async_set_native_value(45.0))
     assert e.native_value == 45.0
 
 
 def test_autostop_cost_is_readonly_zero():
-    entry = ConfigEntry()
-    e = AutoStopCost(HomeAssistant(), entry, _FakeCoord(_data()), "EVB-1")
+    entry = make_entry()
+    e = AutoStopCost(make_hass(), entry, _FakeCoord(_data()), "EVB-1")
     assert e.native_value == 0.0

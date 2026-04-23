@@ -14,8 +14,7 @@ import types
 
 import pytest
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from _helpers import make_entry, make_hass
 
 
 _PKG_DIR = pathlib.Path(__file__).resolve().parent.parent / "custom_components" / "tapelectric"
@@ -46,15 +45,21 @@ def init_module():
     module = importlib.util.module_from_spec(spec)
     sys.modules["tapelectric._main_init"] = module
     spec.loader.exec_module(module)
+
+    # Replace HA-hitting repairs helper with a no-op — once the module
+    # is loaded, conftest's autouse fixture can't retroactively patch
+    # it because __init__.py imported the symbol directly.
+    if hasattr(module, "note_write_blocked"):
+        module.note_write_blocked = lambda *a, **k: None
     return module
 
 
 def test_migrate_v1_to_v2_adds_advanced_mode_false(init_module):
-    entry = ConfigEntry(
+    entry = make_entry(
         version=1,
         data={"api_key": "sk_old"},
     )
-    hass = HomeAssistant()
+    hass = make_hass()
     ok = asyncio.run(init_module.async_migrate_entry(hass, entry))
     assert ok is True
     assert entry.version == 2
@@ -64,19 +69,19 @@ def test_migrate_v1_to_v2_adds_advanced_mode_false(init_module):
 
 
 def test_migrate_already_v2_is_noop(init_module):
-    entry = ConfigEntry(
+    entry = make_entry(
         version=2,
         data={"api_key": "sk_x", "advanced_mode": True,
               "advanced_refresh_token": "rt_keep"},
     )
-    hass = HomeAssistant()
+    hass = make_hass()
     asyncio.run(init_module.async_migrate_entry(hass, entry))
     assert entry.version == 2
     assert entry.data["advanced_refresh_token"] == "rt_keep"
 
 
 def test_options_view_merges_defaults(init_module):
-    entry = ConfigEntry(options={"scan_interval_active_s": 45})
+    entry = make_entry(options={"scan_interval_active_s": 45})
     merged = init_module.options_view(entry)
     assert merged["scan_interval_active_s"] == 45
     # defaulted key still present.
@@ -84,18 +89,18 @@ def test_options_view_merges_defaults(init_module):
 
 
 def test_is_write_enabled_defaults_true(init_module):
-    entry = ConfigEntry()
+    entry = make_entry()
     assert init_module.is_write_enabled(entry) is True
 
 
 def test_is_write_enabled_false_when_off(init_module):
-    entry = ConfigEntry(options={"write_enabled": False})
+    entry = make_entry(options={"write_enabled": False})
     assert init_module.is_write_enabled(entry) is False
 
 
 def test_ensure_write_enabled_raises_when_off(init_module):
     from homeassistant.exceptions import HomeAssistantError
 
-    entry = ConfigEntry(options={"write_enabled": False})
+    entry = make_entry(options={"write_enabled": False})
     with pytest.raises(HomeAssistantError):
-        init_module.ensure_write_enabled(HomeAssistant(), entry)
+        init_module.ensure_write_enabled(make_hass(), entry)

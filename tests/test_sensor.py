@@ -12,8 +12,6 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from homeassistant.config_entries import ConfigEntry
-
 from tapelectric.api_management import ManagementSession
 from tapelectric.coordinator import TapData
 from tapelectric.sensor import (
@@ -23,12 +21,14 @@ from tapelectric.sensor import (
     SessionEnergySensor,
 )
 
+from _helpers import make_entry
+
 
 class _FakeCoord:
     """Minimal coordinator shim exposing only what the sensors read."""
     def __init__(self, *, data, entry=None):
         self.data = data
-        self.entry = entry or ConfigEntry()
+        self.entry = entry or make_entry()
 
     def stale_threshold(self):
         return timedelta(minutes=15)

@@ -13,9 +13,9 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import UpdateFailed
+
+from _helpers import make_entry, make_hass
 
 from tapelectric.api import TapElectricAuthError, TapElectricError
 from tapelectric.api_management import ManagementSession
@@ -63,7 +63,7 @@ class _FakeClient:
 
 class _StubCoord(TapCoordinator):
     def __init__(self, *, client, entry, mgmt=None, charger_id=None):
-        self.hass = HomeAssistant()
+        self.hass = make_hass()
         self.client = client
         self.mgmt = mgmt
         self.entry = entry
@@ -101,7 +101,7 @@ def test_update_data_populates_chargers_and_sessions():
         client=_FakeClient(
             chargers=chargers, sessions=sessions, meter_rows=meter_rows,
         ),
-        entry=ConfigEntry(),
+        entry=make_entry(),
     )
     data = _run(coord._async_update_data())
     assert data.chargers == chargers
@@ -125,7 +125,7 @@ def test_update_data_no_plugged_connector_means_no_active_session():
     }]
     coord = _StubCoord(
         client=_FakeClient(chargers=chargers, sessions=sessions),
-        entry=ConfigEntry(),
+        entry=make_entry(),
     )
     data = _run(coord._async_update_data())
     assert data.active_by_charger["EVB-1"] is None
@@ -138,7 +138,7 @@ def test_update_data_scope_filters_chargers():
     ]
     coord = _StubCoord(
         client=_FakeClient(chargers=chargers, sessions=[]),
-        entry=ConfigEntry(),
+        entry=make_entry(),
         charger_id="EVB-2",
     )
     data = _run(coord._async_update_data())
@@ -150,7 +150,7 @@ def test_update_data_scope_filters_chargers():
 def test_auth_error_raises_update_failed_and_counts():
     coord = _StubCoord(
         client=_FakeClient(raise_list_chargers=TapElectricAuthError("401")),
-        entry=ConfigEntry(),
+        entry=make_entry(),
     )
     with pytest.raises(UpdateFailed):
         _run(coord._async_update_data())
@@ -160,7 +160,7 @@ def test_auth_error_raises_update_failed_and_counts():
 def test_two_auth_failures_in_a_row_log_repair():
     coord = _StubCoord(
         client=_FakeClient(raise_list_chargers=TapElectricAuthError("401")),
-        entry=ConfigEntry(),
+        entry=make_entry(),
     )
     with pytest.raises(UpdateFailed):
         _run(coord._async_update_data())
@@ -174,7 +174,7 @@ def test_auth_success_resets_counter():
     # First call fails, second succeeds — counter should drop to 0.
     coord = _StubCoord(
         client=_FakeClient(raise_list_chargers=TapElectricAuthError("x")),
-        entry=ConfigEntry(),
+        entry=make_entry(),
     )
     with pytest.raises(UpdateFailed):
         _run(coord._async_update_data())
@@ -186,7 +186,7 @@ def test_auth_success_resets_counter():
 def test_non_auth_tap_error_raises_update_failed():
     coord = _StubCoord(
         client=_FakeClient(raise_list_chargers=TapElectricError("boom")),
-        entry=ConfigEntry(),
+        entry=make_entry(),
     )
     with pytest.raises(UpdateFailed):
         _run(coord._async_update_data())
@@ -201,7 +201,7 @@ def test_interval_idle_default_with_no_active_session():
                  "updatedAt": None}]
     coord = _StubCoord(
         client=_FakeClient(chargers=chargers, sessions=[]),
-        entry=ConfigEntry(options={
+        entry=make_entry(options={
             OPT_SCAN_INTERVAL_ACTIVE_S: 30,
             OPT_SCAN_INTERVAL_IDLE_S: 600,
         }),
@@ -223,7 +223,7 @@ def test_interval_active_when_session_live():
     }]
     coord = _StubCoord(
         client=_FakeClient(chargers=chargers, sessions=sessions),
-        entry=ConfigEntry(options={
+        entry=make_entry(options={
             OPT_SCAN_INTERVAL_ACTIVE_S: 15,
             OPT_SCAN_INTERVAL_IDLE_S: 600,
         }),
@@ -258,7 +258,7 @@ def test_interval_switches_to_advanced_cadence_when_mgmt_ok_and_active():
     coord = _StubCoord(
         client=_FakeClient(chargers=chargers, sessions=sessions),
         mgmt=_FakeMgmt([mgmt_session]),
-        entry=ConfigEntry(),
+        entry=make_entry(),
     )
     data = _run(coord._async_update_data())
     assert data.mgmt_fresh is True
@@ -274,7 +274,7 @@ def test_interval_advanced_idle_when_mgmt_ok_but_no_active():
     coord = _StubCoord(
         client=_FakeClient(chargers=chargers, sessions=[]),
         mgmt=_FakeMgmt([]),
-        entry=ConfigEntry(),
+        entry=make_entry(),
     )
     _run(coord._async_update_data())
     assert coord.update_interval == timedelta(seconds=ADVANCED_IDLE_INTERVAL)
@@ -301,7 +301,7 @@ def test_offline_reconcile_notes_stale_charger():
         }]
         coord = _StubCoord(
             client=_FakeClient(chargers=chargers, sessions=[]),
-            entry=ConfigEntry(),
+            entry=make_entry(),
         )
         _run(coord._async_update_data())
         assert noted == ["EVB-1"]
@@ -326,7 +326,7 @@ def test_offline_reconcile_clears_when_fresh():
         }]
         coord = _StubCoord(
             client=_FakeClient(chargers=chargers, sessions=[]),
-            entry=ConfigEntry(),
+            entry=make_entry(),
         )
         _run(coord._async_update_data())
         assert cleared == ["EVB-1"]
@@ -347,7 +347,7 @@ def test_offline_reconcile_missing_updatedat_clears():
         }]
         coord = _StubCoord(
             client=_FakeClient(chargers=chargers, sessions=[]),
-            entry=ConfigEntry(),
+            entry=make_entry(),
         )
         _run(coord._async_update_data())
         assert cleared == ["EVB-1"]
@@ -359,7 +359,7 @@ def test_offline_reconcile_missing_updatedat_clears():
 
 def test_stale_threshold_from_options():
     coord = _StubCoord(
-        client=_FakeClient(), entry=ConfigEntry(options={
+        client=_FakeClient(), entry=make_entry(options={
             "stale_threshold_minutes": 45,
         }),
     )
@@ -367,5 +367,5 @@ def test_stale_threshold_from_options():
 
 
 def test_stale_threshold_default_when_unset():
-    coord = _StubCoord(client=_FakeClient(), entry=ConfigEntry())
+    coord = _StubCoord(client=_FakeClient(), entry=make_entry())
     assert coord.stale_threshold() > timedelta(minutes=0)
