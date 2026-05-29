@@ -1,0 +1,10 @@
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+  "title": "One or more validation errors occurred.",
+  "status": 400,
+  "errors": {
+    "ocppVersion": ["$.ocppVersion unknown"]
+  },
+  "traceId": "00-envelope-v116-null-version-00",
+  "_fixture_note": "Reproducer for the most common failure: sending ocppVersion=null or any non-'ocpp1.6' string. The validator rejects with this error before any OCPP-layer processing happens."
+}

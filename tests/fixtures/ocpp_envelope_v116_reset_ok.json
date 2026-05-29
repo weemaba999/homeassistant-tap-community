@@ -1,0 +1,17 @@
+{
+  "id": "msg_envelope_v116_reset_ok",
+  "chargerId": "RATIO_PLACEHOLDER",
+  "action": "Reset",
+  "ocppVersion": "ocpp1.6",
+  "initiator": "Platform",
+  "status": "Accepted",
+  "sentAt": "2026-05-12T19:42:00Z",
+  "request": {
+    "action": "Reset",
+    "ocppVersion": "ocpp1.6",
+    "data": "{\"type\": \"Soft\"}"
+  },
+  "response": {
+    "status": "Accepted"
+  }
+}

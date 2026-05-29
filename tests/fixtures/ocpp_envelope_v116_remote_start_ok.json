@@ -1,0 +1,17 @@
+{
+  "id": "msg_envelope_v116_remote_start_ok",
+  "chargerId": "RATIO_PLACEHOLDER",
+  "action": "RemoteStartTransaction",
+  "ocppVersion": "ocpp1.6",
+  "initiator": "Platform",
+  "status": "Accepted",
+  "sentAt": "2026-05-12T20:11:14Z",
+  "request": {
+    "action": "RemoteStartTransaction",
+    "ocppVersion": "ocpp1.6",
+    "data": "{\"idTag\": \"RFID_CHIP_UID_PLACEHOLDER\", \"connectorId\": 1}"
+  },
+  "response": {
+    "status": "Accepted"
+  }
+}

@@ -1,26 +1,40 @@
-"""OCPP 1.6 payload builders for the Tap message-passthrough endpoint.
+"""OCPP 1.6 payload builders for Tap's public /chargers/{id}/ocpp endpoint.
 
-Tap accepts POST /api/v1/chargers/{id}/ocpp with
-  { "request": { "action": OcppAction, "ocppVersion": OcppVersion|null,
-                 "data": object } }
+Tap's public passthrough accepts POST /chargers/{id}/ocpp with:
+  { "action": OcppAction, "ocppVersion": "ocpp1.6", "data": "<JSON-string>" }
 
-The Reference documented a flat envelope with `data` as a string —
-both wrong. Verified against the live server via HA 400-error
-bodies; see ocpp_ha_verification notes for history.
+That is: flat envelope (no `request` wrapper), camelCase keys,
+`ocppVersion` MUST be the string "ocpp1.6" (not null), and `data` MUST
+be a JSON-encoded string (not a nested object). This matches Tap's
+official OpenAPI spec at https://api.tapelectric.app/openapi/Tap%20API.json.
 
-Only two OcppAction values are accepted: SetChargingProfile, Reset.
-RemoteStartTransaction / RemoteStopTransaction are NOT supported by Tap
-— use set_charging_profile(limit=0) for "stop" and a non-zero limit for
-"resume". The charge-session itself is driver-initiated (RFID / app).
+Verified live against a Ratio io6 (firmware 3.13.2) on 2026-05-12:
+  - Reset.Soft                  → status Accepted, Platform-initiated
+  - RemoteStopTransaction       → status Accepted
+  - SetChargingProfile          → status Accepted
+  - UnlockConnector             → status Accepted
+  - RemoteStartTransaction      → status Accepted (PREPARING → CHARGING)
+
+History: an earlier reverse-engineering attempt (April 2026) concluded
+that this endpoint required a `{"request": {"Action": ..., "Data": {...}}}`
+PascalCase wrapper. That hypothesis was wrong — the wrapper variant
+also failed with HTTP 400 ("The Data field is required"), which led
+to v1.1.0 using the management API instead. The flat camelCase envelope
+documented here is what the public endpoint actually accepts, and what
+this module now produces.
 """
 from __future__ import annotations
 
+import json
 import time
 from typing import Any
 
 from .const import (
+    OCPP_ACTION_REMOTE_START_TRANSACTION,
+    OCPP_ACTION_REMOTE_STOP_TRANSACTION,
     OCPP_ACTION_RESET,
     OCPP_ACTION_SET_CHARGING_PROFILE,
+    OCPP_ACTION_UNLOCK_CONNECTOR,
     OCPP_VERSION_DEFAULT,
 )
 
@@ -28,21 +42,19 @@ from .const import (
 def build_ocpp_request(
     action: str,
     data: dict[str, Any],
-    ocpp_version: str | None = OCPP_VERSION_DEFAULT,
+    ocpp_version: str = OCPP_VERSION_DEFAULT,
 ) -> dict[str, Any]:
-    """Wrap an OCPP payload in Tap's OcppMessageRequest envelope.
+    """Wrap an OCPP payload in Tap's public-endpoint envelope.
 
-    The server requires PascalCase keys inside the `request` object
-    (Action, OcppVersion, Data) — camelCase binds to null and
-    triggers "The Data field is required" from the validator.
-    Envelope key `request` stays camelCase (that binds fine).
+    The server requires camelCase keys at the root, no wrapper, and
+    `data` as a JSON-encoded string. `ocppVersion` must be a non-null
+    string ("ocpp1.6") — null triggers "$.ocppVersion unknown" from the
+    validator.
     """
     return {
-        "request": {
-            "Action": action,
-            "OcppVersion": ocpp_version,
-            "Data": data,
-        }
+        "action": action,
+        "ocppVersion": ocpp_version,
+        "data": json.dumps(data),
     }
 
 
@@ -97,3 +109,61 @@ def set_charging_profile(
 def reset(reset_type: str = "Soft") -> dict[str, Any]:
     """Build a Reset.req payload. reset_type: 'Soft' | 'Hard'."""
     return build_ocpp_request(OCPP_ACTION_RESET, {"type": reset_type})
+
+
+def remote_start_transaction(
+    id_tag: str,
+    *,
+    connector_id: int | None = None,
+) -> dict[str, Any]:
+    """Build a RemoteStartTransaction.req payload.
+
+    Args:
+      id_tag:        The RFID chip UID linked to a configured pas
+                     (e.g. "2BFB3974"). NOT the system-internal
+                     `ET_*`-prefixed identifier visible in Tap UI /
+                     message log — that one triggers Authorize Invalid.
+                     For new passes, obtain the chip UID from Tap
+                     support email — it is not exposed by the public API.
+      connector_id:  Optional. Omit to let the charger pick (typically
+                     connector 1 on single-outlet chargers).
+
+    Verified live on Ratio io6 (firmware 3.13.2) — charger advances
+    PREPARING → CHARGING after a successful RemoteStart.
+    """
+    data: dict[str, Any] = {"idTag": id_tag}
+    if connector_id is not None:
+        data["connectorId"] = connector_id
+    return build_ocpp_request(OCPP_ACTION_REMOTE_START_TRANSACTION, data)
+
+
+def remote_stop_transaction(transaction_id: int) -> dict[str, Any]:
+    """Build a RemoteStopTransaction.req payload.
+
+    Args:
+      transaction_id: OCPP transaction id of the running session.
+                      Fetch from GET /chargers/{id}/ocpp?action=
+                      StartTransaction&limit=1 — the most-recent
+                      StartTransaction message contains it.
+
+    Graceful end-of-session — does not reboot the charger or unlock
+    the cable.
+    """
+    return build_ocpp_request(
+        OCPP_ACTION_REMOTE_STOP_TRANSACTION,
+        {"transactionId": int(transaction_id)},
+    )
+
+
+def unlock_connector(connector_id: int = 1) -> dict[str, Any]:
+    """Build an UnlockConnector.req payload.
+
+    Forces the charger to release the cable from the connector. Use
+    when a session has ended but the cable is still mechanically
+    locked. Tap forwards this as Platform-initiated to the charger;
+    actual unlock behavior is charger-firmware-dependent.
+    """
+    return build_ocpp_request(
+        OCPP_ACTION_UNLOCK_CONNECTOR,
+        {"connectorId": int(connector_id)},
+    )

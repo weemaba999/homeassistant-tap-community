@@ -40,16 +40,19 @@ PATH_CHARGER_OCPP_SEND = "/chargers/{charger_id}/ocpp"    # POST
 PATH_CHARGER_RESET = "/chargers/{charger_id}/reset"        # POST
 
 # ── OCPP message passthrough ────────────────────────────────────────────
-# Tap doesn't expose direct "remote start / remote stop" endpoints. Writing
-# is limited to the two OcppAction values below, per the Reference enum:
+# Tap's public /chargers/{id}/ocpp endpoint accepts the actions below.
+# Verified live on Ratio io6 firmware 3.13.2, 2026-05-12. See ocpp.py
+# module docstring for envelope details.
 OCPP_ACTION_SET_CHARGING_PROFILE = "SetChargingProfile"
 OCPP_ACTION_RESET = "Reset"
+OCPP_ACTION_REMOTE_START_TRANSACTION = "RemoteStartTransaction"
+OCPP_ACTION_REMOTE_STOP_TRANSACTION = "RemoteStopTransaction"
+OCPP_ACTION_UNLOCK_CONNECTOR = "UnlockConnector"
 
-# OcppVersion enum — Tap's OCPP validator rejects the string "1.6" with
-# "$.ocppVersion unknown" and accepts null. The spec marks the field
-# nullable; send null by default and let the server infer from the
-# charger's registered protocol version.
-OCPP_VERSION_DEFAULT: str | None = None
+# Tap's OCPP validator rejects null ocppVersion with "$.ocppVersion
+# unknown". The string "ocpp1.6" is what the official OpenAPI spec
+# documents and what the live server accepts. Don't send null.
+OCPP_VERSION_DEFAULT: str = "ocpp1.6"
 
 # SetChargingProfile with these limits = soft "stop" / "resume":
 CHARGING_LIMIT_OFF_A = 0.0

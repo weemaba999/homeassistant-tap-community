@@ -115,9 +115,9 @@ class ResetButton(CoordinatorEntity[TapCoordinator], ButtonEntity):
         _ensure_write_enabled(self._hass, self._entry)
         reset_type = self._selected_reset_type()
         try:
-            await self._client.reset_charger_direct(self._cid)
+            await self._client.reset_charger(self._cid, reset_type)
             _LOGGER.info(
-                "Reset requested on %s (type %s ignored by direct endpoint)",
+                "Reset requested on %s (type %s, via /ocpp passthrough)",
                 self._cid, reset_type,
             )
         except TapElectricError as err:

@@ -1,0 +1,17 @@
+{
+  "id": "msg_envelope_v116_remote_stop_ok",
+  "chargerId": "RATIO_PLACEHOLDER",
+  "action": "RemoteStopTransaction",
+  "ocppVersion": "ocpp1.6",
+  "initiator": "Platform",
+  "status": "Accepted",
+  "sentAt": "2026-05-12T19:45:30Z",
+  "request": {
+    "action": "RemoteStopTransaction",
+    "ocppVersion": "ocpp1.6",
+    "data": "{\"transactionId\": 12345}"
+  },
+  "response": {
+    "status": "Accepted"
+  }
+}

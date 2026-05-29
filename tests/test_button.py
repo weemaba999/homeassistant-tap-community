@@ -29,8 +29,8 @@ class _FakeClient:
     def __init__(self):
         self.calls = []
 
-    async def reset_charger_direct(self, cid):
-        self.calls.append({"cid": cid, "type": "direct"})
+    async def reset_charger(self, cid, reset_type):
+        self.calls.append({"cid": cid, "type": reset_type})
 
 
 class _FakeCoord:
@@ -115,9 +115,10 @@ def _data_charging_no_mgmt():
     }])
 
 
-def test_reset_button_calls_direct_endpoint(monkeypatch):
-    """Current implementation uses reset_charger_direct; reset_type is
-    read from entry.data but not forwarded (direct endpoint is type-less).
+def test_reset_button_calls_ocpp_endpoint(monkeypatch):
+    """Implementation routes through the /ocpp passthrough
+    (client.reset_charger) and forwards the reset_type read from
+    entry.data, defaulting to Soft.
     """
     monkeypatch.setattr(button_mod, "_ensure_write_enabled", lambda h, e: None)
 
@@ -130,7 +131,7 @@ def test_reset_button_calls_direct_endpoint(monkeypatch):
         make_hass(), make_entry(), _CoordWithRefresh(_data()), client, "EVB-1",
     )
     asyncio.run(btn.async_press())
-    assert client.calls == [{"cid": "EVB-1", "type": "direct"}]
+    assert client.calls == [{"cid": "EVB-1", "type": "Soft"}]
 
 
 def test_reset_button_selected_type_reads_from_entry_data():
