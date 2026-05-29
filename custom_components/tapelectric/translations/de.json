@@ -88,9 +88,9 @@
       },
       "advanced_remote": {
         "title": "Einstellungen für Fernstart/-stopp",
-        "description": "Fernstart konfigurieren. Drei Felder:\n\n• **Standard-RFID-Tag** — der id_tag, der bei RemoteStartTransaction gesendet wird (Format TAP-NNNNNN-N). Zu finden in der Tap-Webapp unter Autorisaties (Autorisierungen) oder auf der Rückseite Ihrer physischen RFID-Karte.\n\n• **Outlet-ID pro Ladepunkt** — Taps interner Outlet-Identifier (ou_*) pro Ladepunkt. Erforderlich für Fernstart. Über den Netzwerk-Tab (F12) der Tap-Webapp bei einer Fernstart-Anfrage erfassen, oder `tests/probe_har.py` auf einer gespeicherten .har-Datei ausführen.\n\n• **Profil-ID** — optional. Überschreibt die usr_*-Profilkennung, die an Taps chargerManagement-Endpunkt gesendet wird. Leer lassen, um Ihre Firebase user_id zu verwenden (Standard).\n\nAlle Felder leer lassen, um den Fernstart zu deaktivieren. Fernstopp funktioniert weiterhin — er benötigt nur die aktive Transaktions-ID, die die Integration bereits verfolgt.",
+        "description": "Fernstart konfigurieren. Drei Felder:\n\n• **Standard-RFID-Tag** — der id_tag, der bei RemoteStartTransaction gesendet wird. Dies ist die rohe NFC-Chip-UID Ihrer physischen RFID-Karte: 8-stelliger Hex Chip-UID (z.B. 12AB34CD). NICHT die ET_-Identifier, die in der Tap-Webapp angezeigt wird. Siehe den README-Leitfaden zur Ermittlung (NFC Tools auf Android, F12-Aufzeichnung oder Tap-Support).\n\n• **Outlet-ID pro Ladepunkt** — Taps interner Outlet-Identifier (ou_*) pro Ladepunkt. Erforderlich für Fernstart. Über den Netzwerk-Tab (F12) der Tap-Webapp bei einer Fernstart-Anfrage erfassen, oder `tests/probe_har.py` auf einer gespeicherten .har-Datei ausführen.\n\n• **Profil-ID** — optional. Überschreibt die usr_*-Profilkennung, die an Taps chargerManagement-Endpunkt gesendet wird. Leer lassen, um Ihre Firebase user_id zu verwenden (Standard).\n\nAlle Felder leer lassen, um den Fernstart zu deaktivieren. Fernstopp funktioniert weiterhin — er benötigt nur die aktive Transaktions-ID, die die Integration bereits verfolgt.",
         "data": {
-          "default_id_tag": "Standard-RFID-Tag (TAP-NNNNNN-N)",
+          "default_id_tag": "Standard-RFID-Tag (8-stelliger Hex Chip-UID, z.B. 12AB34CD)",
           "advanced_profile_id": "Tap-Profil-ID (usr_…, optionaler Override)"
         }
       }

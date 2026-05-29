@@ -93,9 +93,9 @@
       },
       "advanced_remote": {
         "title": "Remote start/stop settings",
-        "description": "Configure Remote Start. Three fields:\n\n• **Default RFID tag** — the id_tag sent on RemoteStartTransaction (format TAP-NNNNNN-N). Find it in the Tap webapp under Autorisaties (Authorizations) or on the back of your physical RFID card.\n\n• **Outlet ID per charger** — Tap's internal outlet identifier (ou_*) per charger. Required for Remote Start. Capture via the Tap webapp's F12 Network tab on a remote-start request, or run `tests/probe_har.py` on a saved .har file.\n\n• **Profile ID** — optional. Override the usr_* profile sent to Tap's chargerManagement endpoint. Leave empty to use your Firebase user_id (the default).\n\nLeave every field empty to disable Remote Start. Remote Stop works regardless — it only needs the active transaction ID, which the integration tracks automatically.",
+        "description": "Configure Remote Start. Three fields:\n\n• **Default RFID tag** — the id_tag sent on RemoteStartTransaction. This is the raw NFC chip UID burned into your physical RFID card: 8-hex chip UID (e.g. 12AB34CD). NOT the ET_-prefixed visualID shown in the Tap webapp. See the README discovery guide (NFC Tools on Android, F12 capture, or Tap support).\n\n• **Outlet ID per charger** — Tap's internal outlet identifier (ou_*) per charger. Required for Remote Start. Capture via the Tap webapp's F12 Network tab on a remote-start request, or run `tests/probe_har.py` on a saved .har file.\n\n• **Profile ID** — optional. Override the usr_* profile sent to Tap's chargerManagement endpoint. Leave empty to use your Firebase user_id (the default).\n\nLeave every field empty to disable Remote Start. Remote Stop works regardless — it only needs the active transaction ID, which the integration tracks automatically.",
         "data": {
-          "default_id_tag": "Default RFID tag (TAP-NNNNNN-N)",
+          "default_id_tag": "Default RFID tag (8-hex chip UID, e.g. 12AB34CD)",
           "advanced_profile_id": "Tap profile ID (usr_…, optional override)"
         }
       }

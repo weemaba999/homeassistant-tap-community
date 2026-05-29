@@ -6,7 +6,35 @@ project uses [semantic versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Nothing pending beyond what shipped in 1.1.0.
+Nothing pending beyond what shipped in 1.1.1.
+
+## [1.1.1] - 2026-05-29
+
+### Fixed
+- OCPP envelope schema for `/chargers/{id}/ocpp` endpoint
+  corrected to flat camelCase with `data` as JSON-encoded string,
+  per Tap's OpenAPI spec. Unblocks Reset, RemoteStop, RemoteStart,
+  SetChargingProfile, and UnlockConnector via the public API
+  path. Contributed by @ronlimon (#4). Verified live on EVBox
+  Elvi (Reset) and Ratio io6 (all five actions).
+- README `id_tag` format documentation corrected: this is the raw
+  NFC chip UID (8 hex characters, e.g. `12AB34CD`), not the
+  `ET_`-prefixed visualID shown in the Tap webapp. The same fix
+  is applied to the OptionsFlow help strings.
+
+### Added
+- Brand icon shipped locally in
+  `custom_components/tapelectric/brand/` per the HA 2026.3+ local
+  brand images convention. Visible on HA 2026.3 and newer; older
+  versions display the default integration icon.
+
+### Known limitations (unchanged from v1.1.0)
+- Charger firmware support for OCPP actions is independent of
+  this envelope fix. EVBox Elvi firmware accepts Reset but
+  rejects RemoteStop and RemoteStart at the OCPP layer (verified
+  via direct API testing and via Tap's own webapp). Other
+  charger models may behave differently. Seeking beta testers
+  via the HA Community forum.
 
 ## [1.1.0] — 2026-04-27
 

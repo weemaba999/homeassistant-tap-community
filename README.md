@@ -128,6 +128,22 @@ Flipping **Enable write operations** off makes the whole integration
 read-only. Pause/resume, limit, reset, and external meter push will
 raise an HA Repairs issue instead of calling the API.
 
+### Finding your RFID chip UID
+
+The `id_tag` for Remote Start is the raw NFC chip UID burned into
+your physical RFID card — not the `ET_`-prefixed identifier visible
+in the Tap webapp. Three ways to obtain it:
+
+- **Android**: install NFC Tools (Play Store), hold your charger
+  pass against the back of the phone, copy the displayed serial
+  number (8 hex characters, e.g. `12AB34CD`).
+- **F12 capture on web.tapelectric.app**: open the webapp, navigate
+  to your charger, F12 → Network tab, manually start a session.
+  The request body to `.../ocppMessages` contains the `id_tag`
+  field with the chip UID.
+- **Ask Tap support**: their engineering team answers technical
+  questions about the value linked to your account.
+
 ## Entity reference
 
 Entities are created per charger. Names use HA's `has_entity_name`
@@ -161,7 +177,7 @@ as **Status**, **Charging**, **Plug connected**, etc.
 | Auto-stop kWh / minutes / cost | number | ✖ | HA-local | Blueprint-driven thresholds |
 | Reset | button | ✔ | public | OCPP Reset via dedicated endpoint |
 | Stop charging | button | ✔ (advanced) | mgmt | OCPP RemoteStopTransaction. Available only while a session is active. |
-| Start charging | button | ✔ (advanced) | mgmt | OCPP RemoteStartTransaction. Needs a default RFID id_tag + per-charger outlet_id (set under Options → Advanced mode → Remote start/stop settings). |
+| Start charging | button | ✔ (advanced) | mgmt | OCPP RemoteStartTransaction. Needs a default RFID id_tag (8-hex chip UID, e.g. 12AB34CD — see [Finding your RFID chip UID](#finding-your-rfid-chip-uid)) + per-charger outlet_id (set under Options → Advanced mode → Remote start/stop settings). |
 | Reset type | select | ✖ | HA-local | Soft / Hard — preselects for the reset button |
 
 ## Hardware compatibility

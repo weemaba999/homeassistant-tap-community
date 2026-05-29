@@ -93,9 +93,9 @@
       },
       "advanced_remote": {
         "title": "Instellingen op afstand starten/stoppen",
-        "description": "Configureer 'Start op afstand'. Drie velden:\n\n• **Standaard RFID-label** — het id_tag dat verzonden wordt bij RemoteStartTransaction (formaat TAP-NNNNNN-N). Te vinden in de Tap-webapp onder Autorisaties, of op de achterkant van je fysieke RFID-kaart.\n\n• **Outlet-ID per laadpunt** — de interne outlet-identifier van Tap (ou_*) per laadpunt. Vereist voor 'Start op afstand'. Vastleggen via het Netwerk-tabblad (F12) van de Tap-webapp bij een 'start op afstand'-verzoek, of voer `tests/probe_har.py` uit op een opgeslagen .har-bestand.\n\n• **Profiel-ID** — optioneel. Override de usr_*-profielidentificatie die naar Tap's chargerManagement-endpoint gestuurd wordt. Laat leeg om je Firebase user_id te gebruiken (de standaard).\n\nLaat alle velden leeg om 'Start op afstand' uit te schakelen. 'Stop op afstand' blijft werken — die heeft enkel de actieve transactie-ID nodig, die de integratie al bijhoudt.",
+        "description": "Configureer 'Start op afstand'. Drie velden:\n\n• **Standaard RFID-label** — het id_tag dat verzonden wordt bij RemoteStartTransaction. Dit is de ruwe NFC chip-UID van je fysieke RFID-kaart: 8-hex chip UID (bv. 12AB34CD). NIET de ET_-identifier die de Tap-webapp toont. Zie de README-ontdekkingsgids (NFC Tools op Android, F12-capture, of Tap-support).\n\n• **Outlet-ID per laadpunt** — de interne outlet-identifier van Tap (ou_*) per laadpunt. Vereist voor 'Start op afstand'. Vastleggen via het Netwerk-tabblad (F12) van de Tap-webapp bij een 'start op afstand'-verzoek, of voer `tests/probe_har.py` uit op een opgeslagen .har-bestand.\n\n• **Profiel-ID** — optioneel. Override de usr_*-profielidentificatie die naar Tap's chargerManagement-endpoint gestuurd wordt. Laat leeg om je Firebase user_id te gebruiken (de standaard).\n\nLaat alle velden leeg om 'Start op afstand' uit te schakelen. 'Stop op afstand' blijft werken — die heeft enkel de actieve transactie-ID nodig, die de integratie al bijhoudt.",
         "data": {
-          "default_id_tag": "Standaard RFID-label (TAP-NNNNNN-N)",
+          "default_id_tag": "Standaard RFID-label (8-hex chip UID, bv. 12AB34CD)",
           "advanced_profile_id": "Tap profiel-ID (usr_…, optionele override)"
         }
       }
