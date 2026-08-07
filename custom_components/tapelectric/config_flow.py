@@ -15,13 +15,13 @@ advanced_ask so the user can opt in or out before the entry is
 finalised. If they decline, the entry is created with
 `advanced_mode: False` and everything behaves exactly as in phase B.
 
-ConfigFlow VERSION was bumped to 2 when the advanced-mode data keys
-were introduced. v1 entries migrate cleanly via
+ConfigFlow VERSION is 3. Older entries migrate sequentially through
 __init__.async_migrate_entry.
 """
 from __future__ import annotations
 
 import logging
+import secrets
 from typing import Any
 
 import aiohttp
@@ -29,6 +29,15 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.selector import (
+    SelectOptionDict,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
+)
 
 from .api import TapElectricAuthError, TapElectricClient, TapElectricError
 from .api_management import (
@@ -43,6 +52,7 @@ from .auth_firebase import (
     TapFirebaseInvalidCredentials,
     TapFirebaseNetworkError,
 )
+from .charging_cards import charging_cards, validate_card_input
 from .const import (
     CONF_ADVANCED_ACCOUNT_ID,
     CONF_ADVANCED_EMAIL,
@@ -53,12 +63,13 @@ from .const import (
     CONF_API_KEY,
     CONF_BASE_URL,
     CONF_CHARGER_ID,
-    CONF_DEFAULT_ID_TAG,
     CONF_WEBHOOK_SECRET,
     DATA_DEFAULT_OUTLET_IDS,
     DEFAULT_BASE_URL,
     DEFAULT_OPTIONS,
     DOMAIN,
+    OPT_CHARGING_CARDS,
+    OPT_DEFAULT_CHARGING_CARD_ID,
     OPT_METER_DATA_LIMIT,
     OPT_ROUND_ENERGY_DECIMALS,
     OPT_ROUND_POWER_DECIMALS,
@@ -168,7 +179,7 @@ async def _advanced_sign_in(
 # ── ConfigFlow ─────────────────────────────────────────────────────────
 
 class TapConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    VERSION = 2
+    VERSION = 3
 
     def __init__(self) -> None:
         super().__init__()
@@ -315,7 +326,9 @@ class TapOptionsFlowHandler(config_entries.OptionsFlow):
     general options or to the advanced-mode submenu."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        pass
+        self._card_draft: list[dict[str, str]] | None = None
+        self._default_card_id: str | None = None
+        self._editing_card_id: str | None = None
 
     # ── menu root ─────────────────────────────────────────────────────
 
@@ -392,6 +405,7 @@ class TapOptionsFlowHandler(config_entries.OptionsFlow):
             options = [
                 "advanced_update",
                 "advanced_remote",
+                "advanced_cards",
                 "advanced_disable",
             ]
         else:
@@ -400,6 +414,227 @@ class TapOptionsFlowHandler(config_entries.OptionsFlow):
             step_id="advanced_menu",
             menu_options=options,
         )
+
+    # ── sub-flow: saved charging cards ───────────────────────────────
+
+    def _ensure_card_draft(self) -> None:
+        if self._card_draft is not None:
+            return
+        self._card_draft = [
+            dict(card) for card in charging_cards(self.config_entry.options)
+        ]
+        stored_default = self.config_entry.options.get(
+            OPT_DEFAULT_CHARGING_CARD_ID,
+        )
+        self._default_card_id = (
+            stored_default
+            if any(card["id"] == stored_default for card in self._card_draft)
+            else None
+        )
+
+    def _card_options(self) -> list[SelectOptionDict]:
+        self._ensure_card_draft()
+        assert self._card_draft is not None
+        return [
+            {"value": card["id"], "label": card["label"]}
+            for card in self._card_draft
+        ]
+
+    def _card_by_id(self, card_id: str | None) -> dict[str, str] | None:
+        self._ensure_card_draft()
+        assert self._card_draft is not None
+        return next(
+            (card for card in self._card_draft if card["id"] == card_id),
+            None,
+        )
+
+    async def async_step_advanced_cards(
+        self, user_input: dict[str, Any] | None = None,
+    ):
+        self._ensure_card_draft()
+        assert self._card_draft is not None
+        menu_options = ["card_add"]
+        if self._card_draft:
+            menu_options.extend(["card_edit", "card_remove", "card_default"])
+        menu_options.append("card_save")
+
+        default_card = self._card_by_id(self._default_card_id)
+        return self.async_show_menu(
+            step_id="advanced_cards",
+            menu_options=menu_options,
+            description_placeholders={
+                "cards": ", ".join(card["label"] for card in self._card_draft)
+                or "-",
+                "default": default_card["label"] if default_card else "-",
+            },
+        )
+
+    async def async_step_card_add(
+        self, user_input: dict[str, Any] | None = None,
+    ):
+        self._ensure_card_draft()
+        assert self._card_draft is not None
+        errors: dict[str, str] = {}
+        label = ""
+        if user_input is not None:
+            label, id_tag, errors = validate_card_input(
+                self._card_draft,
+                user_input.get("label", ""),
+                user_input.get("id_tag", ""),
+            )
+            if not errors:
+                card_id = secrets.token_hex(8)
+                while self._card_by_id(card_id) is not None:
+                    card_id = secrets.token_hex(8)
+                self._card_draft.append({
+                    "id": card_id, "label": label, "id_tag": id_tag,
+                })
+                if self._default_card_id is None:
+                    self._default_card_id = card_id
+                return await self.async_step_advanced_cards()
+
+        return self.async_show_form(
+            step_id="card_add",
+            data_schema=vol.Schema({
+                vol.Required("label", default=label): TextSelector(),
+                vol.Required("id_tag"): TextSelector(TextSelectorConfig(
+                    type=TextSelectorType.PASSWORD,
+                )),
+            }),
+            errors=errors,
+        )
+
+    async def async_step_card_edit(
+        self, user_input: dict[str, Any] | None = None,
+    ):
+        self._ensure_card_draft()
+        if user_input is not None:
+            self._editing_card_id = user_input["card_id"]
+            return await self.async_step_card_edit_details()
+        return self.async_show_form(
+            step_id="card_edit",
+            data_schema=vol.Schema({
+                vol.Required("card_id"): SelectSelector(
+                    SelectSelectorConfig(
+                        options=self._card_options(),
+                        mode=SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+            }),
+        )
+
+    async def async_step_card_edit_details(
+        self, user_input: dict[str, Any] | None = None,
+    ):
+        card = self._card_by_id(self._editing_card_id)
+        if card is None:
+            return await self.async_step_advanced_cards()
+
+        errors: dict[str, str] = {}
+        label = card["label"]
+        if user_input is not None:
+            raw_id_tag = user_input.get("id_tag", "")
+            label, normalized_id_tag, errors = validate_card_input(
+                self._card_draft or [],
+                user_input.get("label", ""),
+                raw_id_tag or card["id_tag"],
+                exclude_card_id=card["id"],
+                validate_id_tag=bool(raw_id_tag),
+            )
+            if not errors:
+                card["label"] = label
+                if raw_id_tag:
+                    card["id_tag"] = normalized_id_tag
+                self._editing_card_id = None
+                return await self.async_step_advanced_cards()
+
+        return self.async_show_form(
+            step_id="card_edit_details",
+            data_schema=vol.Schema({
+                vol.Required("label", default=label): TextSelector(),
+                vol.Optional("id_tag", default=""): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.PASSWORD)
+                ),
+            }),
+            errors=errors,
+        )
+
+    async def async_step_card_remove(
+        self, user_input: dict[str, Any] | None = None,
+    ):
+        self._ensure_card_draft()
+        assert self._card_draft is not None
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            if not user_input.get("confirm"):
+                errors["confirm"] = "confirm_remove"
+            else:
+                card_id = user_input["card_id"]
+                self._card_draft = [
+                    card for card in self._card_draft
+                    if card["id"] != card_id
+                ]
+                if self._default_card_id == card_id:
+                    self._default_card_id = None
+                return await self.async_step_advanced_cards()
+
+        return self.async_show_form(
+            step_id="card_remove",
+            data_schema=vol.Schema({
+                vol.Required("card_id"): SelectSelector(
+                    SelectSelectorConfig(
+                        options=self._card_options(),
+                        mode=SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Required("confirm", default=False): bool,
+            }),
+            errors=errors,
+        )
+
+    async def async_step_card_default(
+        self, user_input: dict[str, Any] | None = None,
+    ):
+        self._ensure_card_draft()
+        if user_input is not None:
+            selected_id = user_input["card_id"] or None
+            self._default_card_id = selected_id
+            return await self.async_step_advanced_cards()
+
+        return self.async_show_form(
+            step_id="card_default",
+            data_schema=vol.Schema({
+                vol.Required(
+                    "card_id",
+                    default=self._default_card_id or self._card_draft[0]["id"],
+                ): SelectSelector(SelectSelectorConfig(
+                    options=self._card_options(),
+                    mode=SelectSelectorMode.DROPDOWN,
+                )),
+            }),
+        )
+
+    async def async_step_card_save(
+        self, user_input: dict[str, Any] | None = None,
+    ):
+        self._ensure_card_draft()
+        assert self._card_draft is not None
+        if self._card_draft and self._card_by_id(self._default_card_id) is None:
+            return await self.async_step_card_default()
+
+        new_options = dict(self.config_entry.options)
+        if self._card_draft:
+            new_options[OPT_CHARGING_CARDS] = [
+                dict(card) for card in self._card_draft
+            ]
+        else:
+            new_options.pop(OPT_CHARGING_CARDS, None)
+
+        if self._card_by_id(self._default_card_id) is not None:
+            new_options[OPT_DEFAULT_CHARGING_CARD_ID] = self._default_card_id
+        else:
+            new_options.pop(OPT_DEFAULT_CHARGING_CARD_ID, None)
+        return self.async_create_entry(title="", data=new_options)
 
     def _known_chargers(self) -> list[tuple[str, str]]:
         """Return [(charger_id, display_name), …] from the running coordinator.
@@ -436,8 +671,7 @@ class TapOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_advanced_remote(
         self, user_input: dict[str, Any] | None = None,
     ):
-        """Remote start/stop configuration: id_tag, per-charger outlet IDs,
-        and an optional profile_id override.
+        """Remote start/stop configuration: outlet IDs and profile override.
 
         Stored as top-level entry.data keys (additive, backwards compatible
         with v1.0.0 entries that won't have them). Empty values clear the
@@ -445,7 +679,6 @@ class TapOptionsFlowHandler(config_entries.OptionsFlow):
         editing core.config_entries.json by hand.
         """
         chargers = self._known_chargers()
-        stored_tag = self.config_entry.data.get(CONF_DEFAULT_ID_TAG) or ""
         stored_profile = (
             self.config_entry.data.get(CONF_ADVANCED_PROFILE_ID) or ""
         )
@@ -455,7 +688,6 @@ class TapOptionsFlowHandler(config_entries.OptionsFlow):
         )
 
         if user_input is not None:
-            tag = (user_input.get(CONF_DEFAULT_ID_TAG) or "").strip() or None
             profile = (
                 (user_input.get(CONF_ADVANCED_PROFILE_ID) or "").strip()
                 or None
@@ -473,10 +705,6 @@ class TapOptionsFlowHandler(config_entries.OptionsFlow):
                     outlets.pop(cid, None)
 
             new_data = {**self.config_entry.data}
-            if tag is None:
-                new_data.pop(CONF_DEFAULT_ID_TAG, None)
-            else:
-                new_data[CONF_DEFAULT_ID_TAG] = tag
             if profile is None:
                 new_data.pop(CONF_ADVANCED_PROFILE_ID, None)
             else:
@@ -494,9 +722,7 @@ class TapOptionsFlowHandler(config_entries.OptionsFlow):
             )
             return self.async_create_entry(title="", data={})
 
-        schema_dict: dict[Any, Any] = {
-            vol.Optional(CONF_DEFAULT_ID_TAG, default=stored_tag): str,
-        }
+        schema_dict: dict[Any, Any] = {}
         for cid, name in chargers:
             label = self._outlet_field_label(name, cid)
             schema_dict[

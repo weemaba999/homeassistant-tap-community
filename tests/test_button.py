@@ -16,9 +16,9 @@ from tapelectric.button import (
     StopChargingButton,
 )
 from tapelectric.const import (
-    CONF_DEFAULT_ID_TAG,
     DATA_DEFAULT_OUTLET_IDS,
     DATA_RESET_TYPE,
+    DATA_SELECTED_CHARGING_CARD_IDS,
 )
 from tapelectric.coordinator import TapData
 
@@ -106,12 +106,10 @@ def _data_with_active_mgmt(transaction_id: int | None = 4242):
     return data
 
 
-def _data_charging_no_mgmt():
-    """Connector is plugged + CHARGING but mgmt is stale — Start should be
-    unavailable because is_plugged() returns True."""
+def _data_with_connector_status(status):
     return TapData(chargers=[{
         "id": "EVB-1",
-        "connectors": [{"id": "1", "status": "CHARGING"}],
+        "connectors": [{"id": "1", "status": status}],
     }])
 
 
@@ -244,13 +242,23 @@ def test_stop_button_press_when_no_active_session_is_noop(
 # ── StartChargingButton ────────────────────────────────────────────────
 
 
-def _start_entry(*, id_tag="TAP-1", outlet_id="ou_xyz"):
+def _start_entry(
+    *, id_tag="TAP-1", outlet_id="ou_xyz", selected_card_id="work",
+):
     data: dict = {}
-    if id_tag is not None:
-        data[CONF_DEFAULT_ID_TAG] = id_tag
     if outlet_id is not None:
         data[DATA_DEFAULT_OUTLET_IDS] = {"EVB-1": outlet_id}
-    return make_entry(data=data)
+    if selected_card_id is not None:
+        data[DATA_SELECTED_CHARGING_CARD_IDS] = {
+            "EVB-1": selected_card_id,
+        }
+    options = {}
+    if id_tag is not None:
+        options["charging_cards"] = [{
+            "id": "work", "label": "Employer", "id_tag": id_tag,
+        }]
+        options["default_charging_card_id"] = "work"
+    return make_entry(data=data, options=options)
 
 
 def _start_button(*, data=None, entry=None, mgmt=None) -> StartChargingButton:
@@ -280,12 +288,28 @@ def test_start_button_unavailable_when_session_already_active():
 
 
 def test_start_button_unavailable_when_connector_plugged_charging():
-    btn = _start_button(data=_data_charging_no_mgmt())
+    btn = _start_button(data=_data_with_connector_status("CHARGING"))
     assert btn.available is False
 
 
-def test_start_button_unavailable_without_id_tag():
+@pytest.mark.parametrize("status", ["SUSPENDEDEV", "SUSPENDEDEVSE"])
+def test_start_button_unavailable_when_transaction_suspended(status):
+    btn = _start_button(data=_data_with_connector_status(status))
+    assert btn.available is False
+
+
+def test_start_button_available_when_connector_preparing():
+    btn = _start_button(data=_data_with_connector_status("PREPARING"))
+    assert btn.available is True
+
+
+def test_start_button_unavailable_without_saved_card():
     btn = _start_button(entry=_start_entry(id_tag=None))
+    assert btn.available is False
+
+
+def test_start_button_unavailable_with_stale_selection():
+    btn = _start_button(entry=_start_entry(selected_card_id="removed"))
     assert btn.available is False
 
 
@@ -307,12 +331,36 @@ def test_start_button_calls_remote_start_with_id_tag(monkeypatch):
     }]
 
 
+def test_start_button_checks_write_guard_before_api(monkeypatch):
+    mgmt = _FakeMgmt()
+
+    def _blocked(hass, entry):
+        raise RuntimeError("writes disabled")
+
+    monkeypatch.setattr(button_mod, "_ensure_write_enabled", _blocked)
+    with pytest.raises(RuntimeError, match="writes disabled"):
+        asyncio.run(_start_button(mgmt=mgmt).async_press())
+    assert mgmt.start_calls == []
+
+
 def test_start_button_press_missing_config_is_noop(monkeypatch):
     monkeypatch.setattr(button_mod, "_ensure_write_enabled", lambda h, e: None)
     mgmt = _FakeMgmt()
     btn = _start_button(entry=_start_entry(id_tag=None), mgmt=mgmt)
     asyncio.run(btn.async_press())
     assert mgmt.start_calls == []
+
+
+def test_start_button_uses_selected_card_not_default(monkeypatch):
+    monkeypatch.setattr(button_mod, "_ensure_write_enabled", lambda h, e: None)
+    entry = _start_entry()
+    entry.options["charging_cards"].append({
+        "id": "personal", "label": "Personal", "id_tag": "89ABCDEF",
+    })
+    entry.data[DATA_SELECTED_CHARGING_CARD_IDS]["EVB-1"] = "personal"
+    mgmt = _FakeMgmt()
+    asyncio.run(_start_button(entry=entry, mgmt=mgmt).async_press())
+    assert mgmt.start_calls[0]["id_tag"] == "89ABCDEF"
 
 
 def test_start_button_rejected_logs_warning(monkeypatch, caplog):

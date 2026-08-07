@@ -1,38 +1,19 @@
-"""Options-flow tests — menu routing, general settings, advanced mode.
-
-HA-gated; skipped when homeassistant isn't installed.
-
-xfail note: like test_config_flow.py, these need the HA integration
-loader to resolve the `tapelectric` domain under `custom_components/`.
-Written against the correct intended flow; will pass once loader
-plumbing is in place.
-"""
-# TODO v1.2.0: fix HA integration loader plumbing so these tests
-# actually pass. Currently all 7 tests in this module xfail because
-# the test environment can't locate custom_components/tapelectric/.
-# See: pytest-homeassistant-custom-component custom integration
-# discovery patterns (mock_integration / enable_custom_integrations).
+"""Options-flow tests — menu routing, advanced mode, and charging cards."""
 from __future__ import annotations
 
 import pytest
 
-pytestmark = [
-    pytest.mark.requires_ha,
-    pytest.mark.xfail(
-        reason="HA integration loader can't find tapelectric under custom_components/ — separate follow-up",
-        strict=False,
-    ),
-]
+pytestmark = [pytest.mark.requires_ha]
 
 
 async def test_options_menu_entry_point(hass):
     from pytest_homeassistant_custom_component.common import MockConfigEntry
-    from tapelectric.const import DOMAIN
+    from custom_components.tapelectric.const import DOMAIN
 
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={"api_key": "sk_ok", "advanced_mode": False},
-        version=2,
+        version=3,
     )
     entry.add_to_hass(hass)
 
@@ -43,12 +24,12 @@ async def test_options_menu_entry_point(hass):
 
 async def test_options_general_updates_options(hass):
     from pytest_homeassistant_custom_component.common import MockConfigEntry
-    from tapelectric.const import DOMAIN
+    from custom_components.tapelectric.const import DOMAIN
 
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={"api_key": "sk_ok", "advanced_mode": False},
-        version=2,
+        version=3,
     )
     entry.add_to_hass(hass)
 
@@ -78,7 +59,7 @@ async def test_options_general_updates_options(hass):
 async def test_options_advanced_disable(hass):
     """Flipping advanced_mode off clears the refresh token."""
     from pytest_homeassistant_custom_component.common import MockConfigEntry
-    from tapelectric.const import DOMAIN
+    from custom_components.tapelectric.const import DOMAIN
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -88,7 +69,7 @@ async def test_options_advanced_disable(hass):
             "advanced_email": "e@x.com",
             "advanced_refresh_token": "rt",
         },
-        version=2,
+        version=3,
     )
     entry.add_to_hass(hass)
 
@@ -114,7 +95,7 @@ async def test_options_advanced_disable(hass):
 def _install_fake_coordinator(hass, entry_id, chargers):
     from types import SimpleNamespace
 
-    from tapelectric.const import DOMAIN
+    from custom_components.tapelectric.const import DOMAIN
 
     hass.data.setdefault(DOMAIN, {})[entry_id] = {
         "coordinator": SimpleNamespace(
@@ -135,11 +116,10 @@ async def _open_remote_form(hass, entry):
 
 
 async def test_remote_settings_form_prefills_existing_values(hass):
-    """Form must surface stored id_tag, profile_id, and outlet IDs."""
+    """Form must surface stored profile_id and outlet IDs."""
     from pytest_homeassistant_custom_component.common import MockConfigEntry
-    from tapelectric.const import (
+    from custom_components.tapelectric.const import (
         CONF_ADVANCED_PROFILE_ID,
-        CONF_DEFAULT_ID_TAG,
         DATA_DEFAULT_OUTLET_IDS,
         DOMAIN,
     )
@@ -149,11 +129,10 @@ async def test_remote_settings_form_prefills_existing_values(hass):
         data={
             "api_key": "sk_ok",
             "advanced_mode": True,
-            CONF_DEFAULT_ID_TAG: "TAP-123456-7",
             CONF_ADVANCED_PROFILE_ID: "usr_existing",
             DATA_DEFAULT_OUTLET_IDS: {"EVB-P22208163": "ou_" + "a" * 32},
         },
-        version=2,
+        version=3,
     )
     entry.add_to_hass(hass)
     _install_fake_coordinator(
@@ -171,25 +150,23 @@ async def test_remote_settings_form_prefills_existing_values(hass):
         for key in schema
         if hasattr(key, "default")
     }
-    assert defaults.get(CONF_DEFAULT_ID_TAG) == "TAP-123456-7"
     assert defaults.get(CONF_ADVANCED_PROFILE_ID) == "usr_existing"
     outlet_label = "Outlet ID for Garage (EVB-P22208163)"
     assert defaults.get(outlet_label) == "ou_" + "a" * 32
 
 
-async def test_remote_settings_no_chargers_renders_two_fields(hass):
-    """Without a coordinator the form still renders id_tag + profile_id."""
+async def test_remote_settings_no_chargers_renders_profile_field(hass):
+    """Without a coordinator the form still renders profile_id."""
     from pytest_homeassistant_custom_component.common import MockConfigEntry
-    from tapelectric.const import (
+    from custom_components.tapelectric.const import (
         CONF_ADVANCED_PROFILE_ID,
-        CONF_DEFAULT_ID_TAG,
         DOMAIN,
     )
 
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={"api_key": "sk_ok", "advanced_mode": True},
-        version=2,
+        version=3,
     )
     entry.add_to_hass(hass)
     # Deliberately no fake coordinator — simulates a freshly-installed
@@ -200,7 +177,6 @@ async def test_remote_settings_no_chargers_renders_two_fields(hass):
     keys = {
         getattr(key, "schema", key) for key in result["data_schema"].schema
     }
-    assert CONF_DEFAULT_ID_TAG in keys
     assert CONF_ADVANCED_PROFILE_ID in keys
     # No outlet fields when the coordinator can't tell us which chargers exist.
     assert not any(
@@ -211,12 +187,12 @@ async def test_remote_settings_no_chargers_renders_two_fields(hass):
 async def test_remote_settings_multi_charger_renders_one_field_each(hass):
     """One outlet_id field per known charger."""
     from pytest_homeassistant_custom_component.common import MockConfigEntry
-    from tapelectric.const import DOMAIN
+    from custom_components.tapelectric.const import DOMAIN
 
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={"api_key": "sk_ok", "advanced_mode": True},
-        version=2,
+        version=3,
     )
     entry.add_to_hass(hass)
     _install_fake_coordinator(
@@ -236,12 +212,10 @@ async def test_remote_settings_multi_charger_renders_one_field_each(hass):
 
 
 async def test_remote_settings_save_persists_to_entry_data(hass):
-    """Submitting the form writes id_tag, profile_id, and per-charger
-    outlet IDs into entry.data."""
+    """Submitting the form writes profile_id and outlet IDs to entry.data."""
     from pytest_homeassistant_custom_component.common import MockConfigEntry
-    from tapelectric.const import (
+    from custom_components.tapelectric.const import (
         CONF_ADVANCED_PROFILE_ID,
-        CONF_DEFAULT_ID_TAG,
         DATA_DEFAULT_OUTLET_IDS,
         DOMAIN,
     )
@@ -249,7 +223,7 @@ async def test_remote_settings_save_persists_to_entry_data(hass):
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={"api_key": "sk_ok", "advanced_mode": True},
-        version=2,
+        version=3,
     )
     entry.add_to_hass(hass)
     _install_fake_coordinator(
@@ -262,14 +236,171 @@ async def test_remote_settings_save_persists_to_entry_data(hass):
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
         user_input={
-            CONF_DEFAULT_ID_TAG: "TAP-555555-5",
             outlet_label: "ou_" + "b" * 32,
             CONF_ADVANCED_PROFILE_ID: "",
         },
     )
     assert result["type"] == "create_entry"
-    assert entry.data.get(CONF_DEFAULT_ID_TAG) == "TAP-555555-5"
     assert entry.data.get(DATA_DEFAULT_OUTLET_IDS) == {
         "EVB-P22208163": "ou_" + "b" * 32,
     }
     assert entry.data.get(CONF_ADVANCED_PROFILE_ID) in (None, "")
+
+
+# ── charging cards CRUD ─────────────────────────────────────────────────
+
+async def _open_cards_menu(hass, entry):
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "advanced_menu"},
+    )
+    return await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "advanced_cards"},
+    )
+
+
+def _card_entry(*, cards=None, default=None, data=None):
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from custom_components.tapelectric.const import DOMAIN
+
+    options = {}
+    if cards is not None:
+        options["charging_cards"] = cards
+    if default is not None:
+        options["default_charging_card_id"] = default
+    return MockConfigEntry(
+        domain=DOMAIN,
+        data={"api_key": "sk_ok", "advanced_mode": True, **(data or {})},
+        options=options,
+        version=3,
+    )
+
+
+async def test_charging_cards_add_normalizes_and_sets_first_default(hass):
+    entry = _card_entry()
+    entry.add_to_hass(hass)
+    result = await _open_cards_menu(hass, entry)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "card_add"},
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={"label": " Employer ", "id_tag": "12-ab:34 cd"},
+    )
+    assert result["type"] == "menu"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "card_save"},
+    )
+    card = result["data"]["charging_cards"][0]
+    assert card["label"] == "Employer"
+    assert card["id_tag"] == "12AB34CD"
+    assert result["data"]["default_charging_card_id"] == card["id"]
+
+
+async def test_charging_cards_reject_duplicate_label_and_uid(hass):
+    cards = [{"id": "work", "label": "Employer", "id_tag": "12AB34CD"}]
+    entry = _card_entry(cards=cards, default="work")
+    entry.add_to_hass(hass)
+    result = await _open_cards_menu(hass, entry)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "card_add"},
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={"label": " employer ", "id_tag": "12-ab-34-cd"},
+    )
+    assert result["type"] == "form"
+    assert result["errors"] == {
+        "label": "duplicate_label",
+        "id_tag": "duplicate_id_tag",
+    }
+
+
+async def test_charging_cards_edit_blank_uid_preserves_secret(hass):
+    cards = [{"id": "work", "label": "Employer", "id_tag": "12AB34CD"}]
+    entry = _card_entry(cards=cards, default="work")
+    entry.add_to_hass(hass)
+    result = await _open_cards_menu(hass, entry)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "card_edit"},
+    )
+    assert "12AB34CD" not in str(result["data_schema"])
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"card_id": "work"},
+    )
+    assert "12AB34CD" not in str(result["data_schema"])
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={"label": "Employer / Shell", "id_tag": ""},
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "card_save"},
+    )
+    assert result["data"]["charging_cards"] == [{
+        "id": "work", "label": "Employer / Shell", "id_tag": "12AB34CD",
+    }]
+
+
+async def test_charging_cards_remove_leaves_selection_stale(hass):
+    cards = [{"id": "work", "label": "Employer", "id_tag": "12AB34CD"}]
+    selections = {"selected_charging_card_ids": {"EVB-1": "work"}}
+    entry = _card_entry(cards=cards, default="work", data=selections)
+    entry.add_to_hass(hass)
+    result = await _open_cards_menu(hass, entry)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "card_remove"},
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={"card_id": "work", "confirm": True},
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "card_save"},
+    )
+    assert "charging_cards" not in result["data"]
+    assert "default_charging_card_id" not in result["data"]
+    assert entry.data["selected_charging_card_ids"] == {"EVB-1": "work"}
+
+
+async def test_charging_cards_set_default_does_not_change_selections(hass):
+    cards = [
+        {"id": "work", "label": "Employer", "id_tag": "12AB34CD"},
+        {"id": "home", "label": "Personal", "id_tag": "89ABCDEF"},
+    ]
+    selections = {"selected_charging_card_ids": {"EVB-1": "work"}}
+    entry = _card_entry(cards=cards, default="work", data=selections)
+    entry.add_to_hass(hass)
+    result = await _open_cards_menu(hass, entry)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "card_default"},
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"card_id": "home"},
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "card_save"},
+    )
+    assert result["data"]["default_charging_card_id"] == "home"
+    assert entry.data["selected_charging_card_ids"] == {"EVB-1": "work"}
+
+
+async def test_charging_cards_require_default_when_cards_remain(hass):
+    cards = [
+        {"id": "work", "label": "Employer", "id_tag": "12AB34CD"},
+        {"id": "home", "label": "Personal", "id_tag": "89ABCDEF"},
+    ]
+    entry = _card_entry(cards=cards, default="work")
+    entry.add_to_hass(hass)
+    result = await _open_cards_menu(hass, entry)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "card_remove"},
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={"card_id": "work", "confirm": True},
+    )
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "card_save"},
+    )
+    assert result["type"] == "form"
+    assert result["step_id"] == "card_default"

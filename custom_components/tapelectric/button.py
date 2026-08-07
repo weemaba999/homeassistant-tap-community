@@ -27,9 +27,10 @@ from .api_management import (
     TapManagementClient,
     TapManagementError,
 )
+from .charging_cards import selected_card
 from .const import (
+    ACTIVE_SESSION_CONNECTOR_STATES,
     CONF_ADVANCED_MODE,
-    CONF_DEFAULT_ID_TAG,
     DATA_DEFAULT_OUTLET_IDS,
     DATA_RESET_TYPE,
     DOMAIN,
@@ -227,7 +228,7 @@ class StartChargingButton(_AdvancedButtonBase):
 
     Available only when:
       - no active session is reported by the management API, AND
-      - a default RFID id_tag is configured, AND
+        - a saved charging card is selected for this charger, AND
       - an outlet_id (ou_*) is known for this charger.
 
     The outlet_id is captured from probe_har.py at install time; users
@@ -248,9 +249,10 @@ class StartChargingButton(_AdvancedButtonBase):
         self._attr_unique_id = f"{charger_id}_start_charging"
         self._attr_name = "Start charging"
 
-    def _id_tag(self) -> str | None:
-        raw = self._entry.data.get(CONF_DEFAULT_ID_TAG)
-        return raw.strip() if isinstance(raw, str) and raw.strip() else None
+    def _charging_card(self) -> dict[str, str] | None:
+        return selected_card(
+            self._entry.data, self._entry.options, self._cid,
+        )
 
     def _outlet_id(self) -> str | None:
         bag = self._entry.data.get(DATA_DEFAULT_OUTLET_IDS) or {}
@@ -261,16 +263,20 @@ class StartChargingButton(_AdvancedButtonBase):
 
     def _session_active(self) -> bool:
         # Prefer management-API truth; if that's stale fall back to the
-        # connector-level plugged state so we don't blindly start a
-        # session when the user's car is already charging.
+        # connector status so we don't start over an active transaction.
+        # PREPARING is intentionally startable: the cable is connected but
+        # OCPP has not started a transaction yet.
         s = self.coordinator.data.mgmt_active(self._cid)
         if s is not None:
             return True
-        return self.coordinator.data.is_plugged(self._cid)
+        return any(
+            connector.get("status") in ACTIVE_SESSION_CONNECTOR_STATES
+            for connector in self.coordinator.data.connectors(self._cid)
+        )
 
     @property
     def available(self) -> bool:
-        if self._id_tag() is None:
+        if self._charging_card() is None:
             return False
         if self._outlet_id() is None:
             return False
@@ -278,18 +284,18 @@ class StartChargingButton(_AdvancedButtonBase):
 
     async def async_press(self) -> None:
         _ensure_write_enabled(self._hass, self._entry)
-        id_tag = self._id_tag()
+        card = self._charging_card()
         outlet_id = self._outlet_id()
-        if id_tag is None or outlet_id is None:
+        if card is None or outlet_id is None:
             _LOGGER.warning(
-                "Start charging pressed but id_tag/outlet_id missing — "
-                "configure both under Options → Advanced mode for %s.",
+                "Start charging pressed but selected card/outlet ID is "
+                "missing for %s.",
                 self._cid,
             )
             return
         try:
             result = await self._mgmt.remote_start_transaction(
-                self._cid, outlet_id=outlet_id, id_tag=id_tag,
+                self._cid, outlet_id=outlet_id, id_tag=card["id_tag"],
             )
         except TapManagementAuthError as err:
             _LOGGER.error(
@@ -297,9 +303,9 @@ class StartChargingButton(_AdvancedButtonBase):
                 "advanced mode under Options.", self._cid, err,
             )
             return
-        except TapManagementError as err:
+        except TapManagementError:
             _LOGGER.error(
-                "Start charging refused by API for %s: %s", self._cid, err,
+                "Start charging refused by API for %s", self._cid,
             )
             return
         if result is None:
@@ -317,7 +323,7 @@ class StartChargingButton(_AdvancedButtonBase):
             )
         else:
             _LOGGER.info(
-                "Start charging accepted by Tap API for %s (outlet %s)",
-                self._cid, outlet_id,
+                "Start charging accepted by Tap API for %s with card %s "
+                "(outlet %s)", self._cid, card["label"], outlet_id,
             )
         await self.coordinator.async_request_refresh()

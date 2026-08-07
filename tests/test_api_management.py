@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import re
 from datetime import datetime, timezone
+from unittest.mock import AsyncMock
 
 import aiohttp
 import pytest
@@ -533,6 +534,32 @@ def test_remote_start_sends_correct_envelope(mock_aioresponse):
             "visual_id": None,
         },
     }
+
+
+def test_remote_start_redacts_echoed_id_tag(monkeypatch, caplog):
+    client = TapManagementClient(
+        None, _FakeAuth(), _fresh_tokens(), account_id="acc_test",
+    )
+    monkeypatch.setattr(
+        client,
+        "_request",
+        AsyncMock(side_effect=TapManagementError(
+            'HTTP 400: {"id_tag":"12AB34CD"}',
+        )),
+    )
+    body = {
+        "message_type": "remotestarttransaction",
+        "remote_start_transaction_details": {
+            "outlet_id": "ou_xyz",
+            "id_tag": "12AB34CD",
+            "visual_id": None,
+        },
+    }
+
+    _run(client._post_ocpp_message("EVB-1", body))
+
+    assert "12AB34CD" not in caplog.text
+    assert "<redacted>" in caplog.text
 
 
 def test_remote_stop_sets_required_headers(mock_aioresponse):

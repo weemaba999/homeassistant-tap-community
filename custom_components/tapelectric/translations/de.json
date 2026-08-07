@@ -78,6 +78,7 @@
           "advanced_enable": "Erweiterten Modus aktivieren",
           "advanced_update": "Anmeldedaten aktualisieren",
           "advanced_remote": "Einstellungen für Fernstart/-stopp",
+          "advanced_cards": "Ladekarten",
           "advanced_disable": "Erweiterten Modus deaktivieren"
         }
       },
@@ -88,11 +89,36 @@
       },
       "advanced_remote": {
         "title": "Einstellungen für Fernstart/-stopp",
-        "description": "Fernstart konfigurieren. Drei Felder:\n\n• **Standard-RFID-Tag** — der id_tag, der bei RemoteStartTransaction gesendet wird. Dies ist die rohe NFC-Chip-UID Ihrer physischen RFID-Karte: 8-stelliger Hex Chip-UID (z.B. 12AB34CD). NICHT die ET_-Identifier, die in der Tap-Webapp angezeigt wird. Siehe den README-Leitfaden zur Ermittlung (NFC Tools auf Android, F12-Aufzeichnung oder Tap-Support).\n\n• **Outlet-ID pro Ladepunkt** — Taps interner Outlet-Identifier (ou_*) pro Ladepunkt. Erforderlich für Fernstart. Über den Netzwerk-Tab (F12) der Tap-Webapp bei einer Fernstart-Anfrage erfassen, oder `tests/probe_har.py` auf einer gespeicherten .har-Datei ausführen.\n\n• **Profil-ID** — optional. Überschreibt die usr_*-Profilkennung, die an Taps chargerManagement-Endpunkt gesendet wird. Leer lassen, um Ihre Firebase user_id zu verwenden (Standard).\n\nAlle Felder leer lassen, um den Fernstart zu deaktivieren. Fernstopp funktioniert weiterhin — er benötigt nur die aktive Transaktions-ID, die die Integration bereits verfolgt.",
+        "description": "Konfigurieren Sie den Fernstart, nachdem Sie mindestens eine Ladekarte hinzugefügt haben.\n\n• **Outlet-ID pro Ladestation** — Taps interne Outlet-ID (ou_*) pro Ladestation. Für den Fernstart erforderlich. Erfassen Sie sie aus einer Fernstart-Anfrage im Netzwerk-Tab (F12) der Tap-Webapp oder führen Sie `tests/probe_har.py` für eine gespeicherte HAR-Datei aus.\n\n• **Profil-ID** — optional. Überschreibt das an Tap gesendete usr_*-Profil. Leer lassen, um Ihre Firebase-Benutzer-ID zu verwenden.\n\nDer Fernstopp benötigt keine dieser Einstellungen.",
         "data": {
-          "default_id_tag": "Standard-RFID-Tag (8-stelliger Hex Chip-UID, z.B. 12AB34CD)",
           "advanced_profile_id": "Tap-Profil-ID (usr_…, optionaler Override)"
         }
+      },
+      "advanced_cards": {
+        "title": "Ladekarten",
+        "description": "Gespeicherte Karten: {cards}\nStandard: {default}\n\nDie Standardkarte wird einmalig für neu erkannte Ladestationen gesetzt. Bestehende Auswahlen werden nie automatisch geändert.",
+        "menu_options": {"card_add": "Karte hinzufügen", "card_edit": "Karte bearbeiten", "card_remove": "Karte entfernen", "card_default": "Standardkarte wählen", "card_save": "Änderungen speichern"}
+      },
+      "card_add": {
+        "title": "Ladekarte hinzufügen",
+        "description": "Geben Sie eine Bezeichnung und die rohe NFC-Chip-UID mit 8, 14 oder 20 Hexadezimalzeichen ein. Die UID wird bei der Eingabe maskiert und nie von einer Entität angezeigt.",
+        "data": {"label": "Bezeichnung", "id_tag": "NFC-Chip-UID"}
+      },
+      "card_edit": {"title": "Ladekarte bearbeiten", "data": {"card_id": "Karte"}},
+      "card_edit_details": {
+        "title": "Ladekarte bearbeiten",
+        "description": "Lassen Sie die NFC-Chip-UID leer, um den gespeicherten Wert beizubehalten.",
+        "data": {"label": "Bezeichnung", "id_tag": "Neue NFC-Chip-UID"}
+      },
+      "card_remove": {
+        "title": "Ladekarte entfernen",
+        "description": "Beim Entfernen einer ausgewählten Karte wird nicht automatisch zu einer anderen Abrechnungskarte gewechselt. Der Fernstart bleibt für betroffene Ladestationen nicht verfügbar, bis eine andere Karte ausgewählt wird.",
+        "data": {"card_id": "Karte", "confirm": "Entfernen bestätigen"}
+      },
+      "card_default": {
+        "title": "Standard-Ladekarte wählen",
+        "description": "Der Standard gilt nur für Ladestationen ohne gespeicherte Auswahl. Bestehende Auswahlen bleiben unverändert.",
+        "data": {"card_id": "Standardkarte"}
       }
     },
     "error": {
@@ -101,7 +127,12 @@
       "user_disabled": "Dieses Tap-Konto ist deaktiviert.",
       "firebase_unknown": "Firebase-Authentifizierung fehlgeschlagen.",
       "account_discovery_failed": "Anmeldung erfolgreich, aber kein Tap-Konto gefunden.",
-      "cannot_connect": "Tap Electric API nicht erreichbar."
+      "cannot_connect": "Tap Electric API nicht erreichbar.",
+      "empty_label": "Geben Sie eine Kartenbezeichnung ein.",
+      "duplicate_label": "Eine Karte mit dieser Bezeichnung ist bereits vorhanden.",
+      "invalid_id_tag": "Die NFC-Chip-UID muss genau 8, 14 oder 20 Hexadezimalzeichen enthalten.",
+      "duplicate_id_tag": "Eine Karte mit dieser NFC-Chip-UID ist bereits vorhanden.",
+      "confirm_remove": "Bestätigen Sie, dass Sie diese Karte entfernen möchten."
     }
   },
   "issues": {
@@ -172,6 +203,9 @@
     "button": {
       "stop_charging":  {"name": "Laden stoppen"},
       "start_charging": {"name": "Laden starten"}
+    },
+    "select": {
+      "charging_card": {"name": "Ladekarte"}
     },
     "switch": {
       "charging_allowed": {"name": "Laden erlaubt (veraltet)"}

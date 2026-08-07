@@ -80,6 +80,7 @@
           "advanced_enable": "Geavanceerde modus inschakelen",
           "advanced_update": "Gegevens bijwerken",
           "advanced_remote": "Instellingen op afstand starten/stoppen",
+          "advanced_cards": "Laadkaarten",
           "advanced_disable": "Geavanceerde modus uitschakelen"
         }
       },
@@ -93,11 +94,45 @@
       },
       "advanced_remote": {
         "title": "Instellingen op afstand starten/stoppen",
-        "description": "Configureer 'Start op afstand'. Drie velden:\n\n• **Standaard RFID-label** — het id_tag dat verzonden wordt bij RemoteStartTransaction. Dit is de ruwe NFC chip-UID van je fysieke RFID-kaart: 8-hex chip UID (bv. 12AB34CD). NIET de ET_-identifier die de Tap-webapp toont. Zie de README-ontdekkingsgids (NFC Tools op Android, F12-capture, of Tap-support).\n\n• **Outlet-ID per laadpunt** — de interne outlet-identifier van Tap (ou_*) per laadpunt. Vereist voor 'Start op afstand'. Vastleggen via het Netwerk-tabblad (F12) van de Tap-webapp bij een 'start op afstand'-verzoek, of voer `tests/probe_har.py` uit op een opgeslagen .har-bestand.\n\n• **Profiel-ID** — optioneel. Override de usr_*-profielidentificatie die naar Tap's chargerManagement-endpoint gestuurd wordt. Laat leeg om je Firebase user_id te gebruiken (de standaard).\n\nLaat alle velden leeg om 'Start op afstand' uit te schakelen. 'Stop op afstand' blijft werken — die heeft enkel de actieve transactie-ID nodig, die de integratie al bijhoudt.",
+        "description": "Configureer Start op afstand nadat je minstens één laadkaart hebt toegevoegd.\n\n• **Outlet-ID per laadpaal** — de interne outlet-ID van Tap (ou_*) per laadpaal. Vereist voor Start op afstand. Haal hem uit een startverzoek in het Netwerk-tabblad (F12) van de Tap-webapp, of voer `tests/probe_har.py` uit op een opgeslagen HAR-bestand.\n\n• **Profiel-ID** — optioneel. Overschrijft het usr_*-profiel dat naar Tap wordt gestuurd. Laat leeg om je Firebase-gebruikers-ID te gebruiken.\n\nStop op afstand heeft geen van beide instellingen nodig.",
         "data": {
-          "default_id_tag": "Standaard RFID-label (8-hex chip UID, bv. 12AB34CD)",
           "advanced_profile_id": "Tap profiel-ID (usr_…, optionele override)"
         }
+      },
+      "advanced_cards": {
+        "title": "Laadkaarten",
+        "description": "Opgeslagen kaarten: {cards}\nStandaard: {default}\n\nDe standaardkaart wordt één keer ingesteld voor nieuw gevonden laadpalen. Bestaande keuzes wijzigen nooit automatisch.",
+        "menu_options": {
+          "card_add": "Kaart toevoegen",
+          "card_edit": "Kaart bewerken",
+          "card_remove": "Kaart verwijderen",
+          "card_default": "Standaardkaart kiezen",
+          "card_save": "Wijzigingen opslaan"
+        }
+      },
+      "card_add": {
+        "title": "Laadkaart toevoegen",
+        "description": "Voer een herkenbaar label en de ruwe NFC-chip-UID van 8, 14 of 20 hexadecimale tekens in. De UID wordt tijdens het typen gemaskeerd en nooit door een entiteit getoond.",
+        "data": {"label": "Label", "id_tag": "NFC-chip-UID"}
+      },
+      "card_edit": {
+        "title": "Laadkaart bewerken",
+        "data": {"card_id": "Kaart"}
+      },
+      "card_edit_details": {
+        "title": "Laadkaart bewerken",
+        "description": "Laat de NFC-chip-UID leeg om de opgeslagen waarde te behouden.",
+        "data": {"label": "Label", "id_tag": "Nieuwe NFC-chip-UID"}
+      },
+      "card_remove": {
+        "title": "Laadkaart verwijderen",
+        "description": "Een geselecteerde kaart verwijderen schakelt nooit stilzwijgend over naar een andere betaalkaart. Start op afstand blijft voor betrokken laadpalen onbeschikbaar tot je een andere kaart kiest.",
+        "data": {"card_id": "Kaart", "confirm": "Verwijderen bevestigen"}
+      },
+      "card_default": {
+        "title": "Standaardlaadkaart kiezen",
+        "description": "De standaard geldt enkel voor laadpalen zonder opgeslagen keuze. Bestaande keuzes blijven ongewijzigd.",
+        "data": {"card_id": "Standaardkaart"}
       }
     },
     "error": {
@@ -106,7 +141,12 @@
       "user_disabled": "Deze Tap-account is uitgeschakeld.",
       "firebase_unknown": "Firebase-authenticatie mislukt.",
       "account_discovery_failed": "Aangemeld, maar geen Tap-account gevonden.",
-      "cannot_connect": "Kon de Tap Electric-API niet bereiken."
+      "cannot_connect": "Kon de Tap Electric-API niet bereiken.",
+      "empty_label": "Voer een kaartlabel in.",
+      "duplicate_label": "Er bestaat al een kaart met dit label.",
+      "invalid_id_tag": "De NFC-chip-UID moet exact 8, 14 of 20 hexadecimale tekens bevatten.",
+      "duplicate_id_tag": "Er bestaat al een kaart met deze NFC-chip-UID.",
+      "confirm_remove": "Bevestig dat je deze kaart wilt verwijderen."
     }
   },
   "issues": {
@@ -177,6 +217,9 @@
     "button": {
       "stop_charging":  {"name": "Laden stoppen"},
       "start_charging": {"name": "Laden starten"}
+    },
+    "select": {
+      "charging_card": {"name": "Laadkaart"}
     },
     "switch": {
       "charging_allowed": {"name": "Laden toegestaan (verouderd)"}

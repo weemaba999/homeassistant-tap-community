@@ -1,4 +1,4 @@
-"""Tests for async_migrate_entry in __init__.py — v1 → v2 migration.
+"""Tests for async_migrate_entry in __init__.py.
 
 This test loads __init__.py in isolation. It depends on the same HA
 stubs as the other tests, plus a stub for the webhook + repairs modules
@@ -54,7 +54,7 @@ def init_module():
     return module
 
 
-def test_migrate_v1_to_v2_adds_advanced_mode_false(init_module):
+def test_migrate_v1_to_v3_adds_advanced_mode_false(init_module):
     entry = make_entry(
         version=1,
         data={"api_key": "sk_old"},
@@ -62,22 +62,55 @@ def test_migrate_v1_to_v2_adds_advanced_mode_false(init_module):
     hass = make_hass()
     ok = asyncio.run(init_module.async_migrate_entry(hass, entry))
     assert ok is True
-    assert entry.version == 2
+    assert entry.version == 3
     assert entry.data["advanced_mode"] is False
     # api_key preserved.
     assert entry.data["api_key"] == "sk_old"
 
 
-def test_migrate_already_v2_is_noop(init_module):
+def test_migrate_v2_converts_default_tag_to_saved_card(init_module):
     entry = make_entry(
         version=2,
         data={"api_key": "sk_x", "advanced_mode": True,
-              "advanced_refresh_token": "rt_keep"},
+              "advanced_refresh_token": "rt_keep",
+              "default_id_tag": " 12ab34cd "},
+        options={"scan_interval_active_s": 45},
     )
     hass = make_hass()
     asyncio.run(init_module.async_migrate_entry(hass, entry))
-    assert entry.version == 2
+    assert entry.version == 3
     assert entry.data["advanced_refresh_token"] == "rt_keep"
+    assert "default_id_tag" not in entry.data
+    assert entry.options["scan_interval_active_s"] == 45
+    assert entry.options["charging_cards"] == [{
+        "id": "legacy-default",
+        "label": "Default",
+        "id_tag": "12ab34cd",
+    }]
+    assert entry.options["default_charging_card_id"] == "legacy-default"
+
+
+def test_migrate_v2_without_default_tag_preserves_options(init_module):
+    entry = make_entry(
+        version=2,
+        data={"api_key": "sk_x", "advanced_mode": True},
+        options={"write_enabled": False},
+    )
+    asyncio.run(init_module.async_migrate_entry(make_hass(), entry))
+    assert entry.version == 3
+    assert entry.options == {"write_enabled": False}
+
+
+def test_migrate_already_v3_is_noop(init_module):
+    cards = [{"id": "card-1", "label": "Personal", "id_tag": "1234ABCD"}]
+    entry = make_entry(
+        version=3,
+        data={"api_key": "sk_x"},
+        options={"charging_cards": cards},
+    )
+    asyncio.run(init_module.async_migrate_entry(make_hass(), entry))
+    assert entry.version == 3
+    assert entry.options["charging_cards"] == cards
 
 
 def test_options_view_merges_defaults(init_module):

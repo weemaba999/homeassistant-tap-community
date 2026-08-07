@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 
 import aiohttp
 
+from .charging_cards import seed_default_selections
 from .api import TapElectricClient, TapElectricError
 from .api_management import TapManagementClient, TapManagementError
 from .auth_firebase import (
@@ -31,7 +32,10 @@ from .const import (
     CONF_API_KEY,
     CONF_BASE_URL,
     CONF_CHARGER_ID,
+    CONF_DEFAULT_ID_TAG,
     CONF_WEBHOOK_SECRET,
+    OPT_CHARGING_CARDS,
+    OPT_DEFAULT_CHARGING_CARD_ID,
     DEFAULT_BASE_URL,
     DEFAULT_OPTIONS,
     DOMAIN,
@@ -161,7 +165,7 @@ async def _bootstrap_advanced_client(
 
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Migrate old entry data. v1 → v2 adds the advanced-mode fields."""
+    """Migrate old entry data through the current schema."""
     if entry.version == 1:
         new_data = {
             **entry.data,
@@ -173,6 +177,25 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.info(
             "Migrated Tap Electric entry from v1 to v2 "
             "(advanced mode available as opt-in via Options).",
+        )
+    if entry.version == 2:
+        new_data = dict(entry.data)
+        raw_id_tag = new_data.pop(CONF_DEFAULT_ID_TAG, None)
+        new_options = dict(entry.options)
+        if isinstance(raw_id_tag, str) and raw_id_tag.strip():
+            legacy_card = {
+                "id": "legacy-default",
+                "label": "Default",
+                "id_tag": raw_id_tag.strip(),
+            }
+            new_options[OPT_CHARGING_CARDS] = [legacy_card]
+            new_options[OPT_DEFAULT_CHARGING_CARD_ID] = legacy_card["id"]
+        hass.config_entries.async_update_entry(
+            entry, data=new_data, options=new_options, version=3,
+        )
+        _LOGGER.info(
+            "Migrated Tap Electric entry from v2 to v3 "
+            "(saved charging cards).",
         )
     return True
 
@@ -200,6 +223,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         charger_id=entry.data.get(CONF_CHARGER_ID),
     )
     await coordinator.async_config_entry_first_refresh()
+
+    seeded_data = seed_default_selections(
+        entry.data,
+        entry.options,
+        (
+            charger["id"]
+            for charger in coordinator.data.chargers
+            if charger.get("id")
+        ),
+    )
+    if seeded_data != entry.data:
+        hass.config_entries.async_update_entry(entry, data=seeded_data)
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
         "client": client,

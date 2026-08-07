@@ -1,4 +1,4 @@
-"""Select platform — holds the reset type for the Reset button."""
+"""Select platform for charger-local choices."""
 from __future__ import annotations
 
 import logging
@@ -10,7 +10,14 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DATA_RESET_TYPE, DOMAIN, MANUFACTURER
+from .charging_cards import charging_cards, selected_card
+from .const import (
+    CONF_ADVANCED_MODE,
+    DATA_RESET_TYPE,
+    DATA_SELECTED_CHARGING_CARD_IDS,
+    DOMAIN,
+    MANUFACTURER,
+)
 from .coordinator import TapCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,6 +31,8 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coord: TapCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
+    has_cards = bool(charging_cards(entry.options))
+    advanced = bool(entry.data.get(CONF_ADVANCED_MODE))
 
     entities: list[SelectEntity] = []
     for c in coord.data.chargers:
@@ -31,7 +40,21 @@ async def async_setup_entry(
         if not cid:
             continue
         entities.append(ResetTypeSelect(hass, entry, coord, cid))
+        if advanced and has_cards:
+            entities.append(ChargingCardSelect(hass, entry, coord, cid))
     async_add_entities(entities)
+
+
+def _device_info_for(coord: TapCoordinator, charger_id: str) -> DeviceInfo:
+    charger = coord.data.charger(charger_id) or {}
+    return DeviceInfo(
+        identifiers={(DOMAIN, charger_id)},
+        manufacturer=charger.get("brand") or MANUFACTURER,
+        name=charger.get("name") or f"Tap Charger {charger_id[:8]}",
+        model=charger.get("model") or charger.get("brand"),
+        sw_version=charger.get("firmwareVersion"),
+        hw_version=charger.get("serialNumber"),
+    )
 
 
 class ResetTypeSelect(CoordinatorEntity[TapCoordinator], SelectEntity):
@@ -55,15 +78,7 @@ class ResetTypeSelect(CoordinatorEntity[TapCoordinator], SelectEntity):
         self._attr_unique_id = f"{charger_id}_reset_type"
         self._attr_name = "Reset type"
 
-        c = coord.data.charger(charger_id) or {}
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, charger_id)},
-            manufacturer=c.get("brand") or MANUFACTURER,
-            name=c.get("name") or f"Tap Charger {charger_id[:8]}",
-            model=c.get("model") or c.get("brand"),
-            sw_version=c.get("firmwareVersion"),
-            hw_version=c.get("serialNumber"),
-        )
+        self._attr_device_info = _device_info_for(coord, charger_id)
 
     @property
     def current_option(self) -> str:
@@ -81,5 +96,64 @@ class ResetTypeSelect(CoordinatorEntity[TapCoordinator], SelectEntity):
         self._hass.config_entries.async_update_entry(
             self._entry,
             data={**self._entry.data, DATA_RESET_TYPE: bag},
+        )
+        self.async_write_ha_state()
+
+
+class ChargingCardSelect(CoordinatorEntity[TapCoordinator], SelectEntity):
+    """Choose the saved card used by Remote Start for one charger."""
+
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:credit-card-wireless"
+    _attr_translation_key = "charging_card"
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        coord: TapCoordinator,
+        charger_id: str,
+    ) -> None:
+        super().__init__(coord)
+        self._hass = hass
+        self._entry = entry
+        self._cid = charger_id
+        self._attr_unique_id = f"{charger_id}_charging_card"
+        self._attr_device_info = _device_info_for(coord, charger_id)
+
+    @property
+    def options(self) -> list[str]:
+        return [card["label"] for card in charging_cards(self._entry.options)]
+
+    @property
+    def current_option(self) -> str | None:
+        card = selected_card(self._entry.data, self._entry.options, self._cid)
+        return card["label"] if card else None
+
+    async def async_select_option(self, option: str) -> None:
+        card = next(
+            (
+                candidate
+                for candidate in charging_cards(self._entry.options)
+                if candidate["label"] == option
+            ),
+            None,
+        )
+        if card is None:
+            raise ValueError(f"Unknown charging card: {option}")
+
+        raw_selections = self._entry.data.get(
+            DATA_SELECTED_CHARGING_CARD_IDS,
+        )
+        selections = (
+            dict(raw_selections) if isinstance(raw_selections, dict) else {}
+        )
+        selections[self._cid] = card["id"]
+        self._hass.config_entries.async_update_entry(
+            self._entry,
+            data={
+                **self._entry.data,
+                DATA_SELECTED_CHARGING_CARD_IDS: selections,
+            },
         )
         self.async_write_ha_state()

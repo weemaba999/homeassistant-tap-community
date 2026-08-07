@@ -269,6 +269,11 @@ def _install_ha_stubs_if_needed() -> None:
             "_attr_has_entity_name": True,
             "native_value": None,
             "is_on": None,
+            "entity_registry_enabled_default": property(
+                lambda self: getattr(
+                    self, "_attr_entity_registry_enabled_default", True,
+                )
+            ),
             "async_write_ha_state": lambda self: None,
         })
 
@@ -393,6 +398,12 @@ def _ha_available() -> bool:
 
 
 HA_AVAILABLE = _ha_available()
+
+if HA_AVAILABLE:
+    @pytest.fixture(autouse=True)
+    def auto_enable_custom_integrations(enable_custom_integrations):
+        """Let HA discover this repository's custom integration."""
+        yield
 
 
 def pytest_collection_modifyitems(config, items):
