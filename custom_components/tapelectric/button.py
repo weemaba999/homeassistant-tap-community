@@ -170,36 +170,47 @@ class StopChargingButton(_AdvancedButtonBase):
         self._attr_unique_id = f"{charger_id}_stop_charging"
         self._attr_name = "Stop charging"
 
-    def _active_transaction_id(self) -> int | None:
-        s = self.coordinator.data.mgmt_active(self._cid)
-        if s is None:
-            return None
-        tid = s.transaction_id
+    @staticmethod
+    def _transaction_id(session: Any) -> int | None:
+        tid = session.transaction_id
         try:
             return int(tid) if tid is not None else None
         except (TypeError, ValueError):
             return None
 
+    async def _active_transaction_id(self) -> int | None:
+        session = self.coordinator.data.mgmt_active(self._cid)
+        if session is None:
+            return None
+        transaction_id = self._transaction_id(session)
+        if transaction_id is not None or not session.session_id:
+            return transaction_id
+        detail = await self._mgmt.get_session(session.session_id)
+        return self._transaction_id(detail)
+
     @property
     def available(self) -> bool:
-        return self._active_transaction_id() is not None
+        return self.coordinator.data.mgmt_active(self._cid) is not None
 
     async def async_press(self) -> None:
         _ensure_write_enabled(self._hass, self._entry)
-        tid = self._active_transaction_id()
-        if tid is None:
-            _LOGGER.warning(
-                "Stop charging pressed but no active transaction on %s — "
-                "this button should have been unavailable.", self._cid,
-            )
-            return
         try:
+            tid = await self._active_transaction_id()
+            if tid is None:
+                _LOGGER.warning(
+                    "Stop charging pressed but no transaction ID is available "
+                    "for the active session on %s.", self._cid,
+                )
+                return
             result = await self._mgmt.remote_stop_transaction(self._cid, tid)
         except TapManagementAuthError as err:
             _LOGGER.error(
                 "Stop charging unauthorised for %s: %s. Re-authenticate "
                 "advanced mode under Options.", self._cid, err,
             )
+            return
+        except TapManagementError as err:
+            _LOGGER.error("Stop charging failed for %s: %s", self._cid, err)
             return
         if result is None:
             _LOGGER.warning(

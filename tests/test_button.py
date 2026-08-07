@@ -9,6 +9,7 @@ import tapelectric.button as button_mod
 from tapelectric.api_management import (
     ManagementSession,
     TapManagementAuthError,
+    TapManagementError,
 )
 from tapelectric.button import (
     ResetButton,
@@ -49,8 +50,10 @@ class _FakeMgmt:
         *,
         stop_result=None,
         start_result=None,
+        detail_result=None,
         stop_raises=None,
         start_raises=None,
+        detail_raises=None,
     ):
         self._stop_result = (
             stop_result if stop_result is not None else {"status": "Accepted"}
@@ -59,10 +62,19 @@ class _FakeMgmt:
             start_result if start_result is not None
             else {"status": "Accepted"}
         )
+        self._detail_result = detail_result
         self._stop_raises = stop_raises
         self._start_raises = start_raises
+        self._detail_raises = detail_raises
         self.stop_calls: list[dict] = []
         self.start_calls: list[dict] = []
+        self.detail_calls: list[str] = []
+
+    async def get_session(self, session_id):
+        self.detail_calls.append(session_id)
+        if self._detail_raises:
+            raise self._detail_raises
+        return self._detail_result
 
     async def remote_stop_transaction(self, charger_id, transaction_id):
         self.stop_calls.append({
@@ -189,6 +201,11 @@ def test_stop_button_available_when_active_session():
     assert btn.available is True
 
 
+def test_stop_button_available_when_active_list_row_has_no_transaction_id():
+    btn = _stop_button(data=_data_with_active_mgmt(None))
+    assert btn.available is True
+
+
 def test_stop_button_calls_remote_stop_with_transaction_id(monkeypatch):
     monkeypatch.setattr(button_mod, "_ensure_write_enabled", lambda h, e: None)
     mgmt = _FakeMgmt()
@@ -197,6 +214,40 @@ def test_stop_button_calls_remote_stop_with_transaction_id(monkeypatch):
     assert mgmt.stop_calls == [
         {"charger_id": "EVB-1", "transaction_id": 4242},
     ]
+    assert mgmt.detail_calls == []
+
+
+def test_stop_button_fetches_missing_transaction_id_from_detail(monkeypatch):
+    monkeypatch.setattr(button_mod, "_ensure_write_enabled", lambda h, e: None)
+    detail = ManagementSession(
+        session_id="cs_active",
+        charger_id="EVB-1",
+        start_date="2026-04-27T10:00:00Z",
+        end_date=None,
+        transaction_id=10005,
+    )
+    mgmt = _FakeMgmt(detail_result=detail)
+    btn = _stop_button(data=_data_with_active_mgmt(None), mgmt=mgmt)
+
+    asyncio.run(btn.async_press())
+
+    assert mgmt.detail_calls == ["cs_active"]
+    assert mgmt.stop_calls == [
+        {"charger_id": "EVB-1", "transaction_id": 10005},
+    ]
+
+
+def test_stop_button_handles_session_detail_error_without_remote_stop(
+    monkeypatch,
+):
+    monkeypatch.setattr(button_mod, "_ensure_write_enabled", lambda h, e: None)
+    mgmt = _FakeMgmt(detail_raises=TapManagementError("detail failed"))
+    btn = _stop_button(data=_data_with_active_mgmt(None), mgmt=mgmt)
+
+    asyncio.run(btn.async_press())
+
+    assert mgmt.detail_calls == ["cs_active"]
+    assert mgmt.stop_calls == []
 
 
 def test_stop_button_handles_rejected_without_crash(
