@@ -101,7 +101,7 @@
       },
       "card_add": {
         "title": "Ajouter une carte de recharge",
-        "description": "Saisissez un libellé et l'UID brut de la puce NFC composé de 8 caractères hexadécimaux. L'UID est masqué pendant la saisie et n'est jamais exposé par une entité.",
+        "description": "Saisissez un libellé et l'UID brut de la puce NFC composé de 8, 14 ou 20 caractères hexadécimaux. L'UID est masqué pendant la saisie et n'est jamais exposé par une entité.",
         "data": {"label": "Libellé", "id_tag": "UID de la puce NFC"}
       },
       "card_edit": {"title": "Modifier une carte de recharge", "data": {"card_id": "Carte"}},
@@ -130,7 +130,7 @@
       "cannot_connect": "Impossible de joindre l'API Tap Electric.",
       "empty_label": "Saisissez un libellé de carte.",
       "duplicate_label": "Une carte avec ce libellé existe déjà.",
-      "invalid_id_tag": "L'UID de la puce NFC doit contenir exactement 8 caractères hexadécimaux.",
+      "invalid_id_tag": "L'UID de la puce NFC doit contenir exactement 8, 14 ou 20 caractères hexadécimaux.",
       "duplicate_id_tag": "Une carte avec cet UID de puce NFC existe déjà.",
       "confirm_remove": "Confirmez que vous souhaitez supprimer cette carte."
     }

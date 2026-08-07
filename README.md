@@ -153,7 +153,7 @@ in the Tap webapp. Practical ways to obtain it:
 
 - **Android**: install NFC Tools (Play Store), hold your charger
   pass against the back of the phone, copy the displayed serial
-  number (8 hex characters, e.g. `12AB34CD`).
+  number (typically 8, 14, or 20 hex characters).
 - **F12 capture on web.tapelectric.app**: open the webapp, navigate
   to your charger, F12 → Network tab, manually start a session.
   The request body to `.../ocppMessages` contains the `id_tag`

@@ -112,7 +112,7 @@
       },
       "card_add": {
         "title": "Add charging card",
-        "description": "Enter a friendly label and the raw 8-hex NFC chip UID. The UID is masked while typing and is never exposed by an entity.",
+        "description": "Enter a friendly label and the raw NFC chip UID (8, 14, or 20 hexadecimal characters). The UID is masked while typing and is never exposed by an entity.",
         "data": {"label": "Label", "id_tag": "NFC chip UID"}
       },
       "card_edit": {
@@ -144,7 +144,7 @@
       "cannot_connect": "Could not reach the Tap Electric API.",
       "empty_label": "Enter a card label.",
       "duplicate_label": "A card with this label already exists.",
-      "invalid_id_tag": "The NFC chip UID must contain exactly 8 hexadecimal characters.",
+      "invalid_id_tag": "The NFC chip UID must contain exactly 8, 14, or 20 hexadecimal characters.",
       "duplicate_id_tag": "A card with this NFC chip UID already exists.",
       "confirm_remove": "Confirm that you want to remove this card."
     }

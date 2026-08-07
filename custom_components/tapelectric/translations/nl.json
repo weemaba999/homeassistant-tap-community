@@ -112,7 +112,7 @@
       },
       "card_add": {
         "title": "Laadkaart toevoegen",
-        "description": "Voer een herkenbaar label en de ruwe NFC-chip-UID van 8 hextekens in. De UID wordt tijdens het typen gemaskeerd en nooit door een entiteit getoond.",
+        "description": "Voer een herkenbaar label en de ruwe NFC-chip-UID van 8, 14 of 20 hexadecimale tekens in. De UID wordt tijdens het typen gemaskeerd en nooit door een entiteit getoond.",
         "data": {"label": "Label", "id_tag": "NFC-chip-UID"}
       },
       "card_edit": {
@@ -144,7 +144,7 @@
       "cannot_connect": "Kon de Tap Electric-API niet bereiken.",
       "empty_label": "Voer een kaartlabel in.",
       "duplicate_label": "Er bestaat al een kaart met dit label.",
-      "invalid_id_tag": "De NFC-chip-UID moet exact 8 hexadecimale tekens bevatten.",
+      "invalid_id_tag": "De NFC-chip-UID moet exact 8, 14 of 20 hexadecimale tekens bevatten.",
       "duplicate_id_tag": "Er bestaat al een kaart met deze NFC-chip-UID.",
       "confirm_remove": "Bevestig dat je deze kaart wilt verwijderen."
     }

@@ -11,7 +11,7 @@ from .const import (
     OPT_DEFAULT_CHARGING_CARD_ID,
 )
 
-_ID_TAG_RE = re.compile(r"^[0-9A-F]{8}$")
+_ID_TAG_RE = re.compile(r"^(?:[0-9A-F]{8}|[0-9A-F]{14}|[0-9A-F]{20})$")
 
 
 def normalize_id_tag(value: str) -> str:
@@ -20,7 +20,7 @@ def normalize_id_tag(value: str) -> str:
 
 
 def is_valid_id_tag(value: str) -> bool:
-    """Return whether a normalized UID is exactly eight hex characters."""
+    """Return whether a UID is a canonical 4-, 7-, or 10-byte value."""
     return _ID_TAG_RE.fullmatch(value) is not None
 
 

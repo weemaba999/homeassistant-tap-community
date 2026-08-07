@@ -101,7 +101,7 @@
       },
       "card_add": {
         "title": "Ladekarte hinzufügen",
-        "description": "Geben Sie eine Bezeichnung und die rohe NFC-Chip-UID mit 8 Hexadezimalzeichen ein. Die UID wird bei der Eingabe maskiert und nie von einer Entität angezeigt.",
+        "description": "Geben Sie eine Bezeichnung und die rohe NFC-Chip-UID mit 8, 14 oder 20 Hexadezimalzeichen ein. Die UID wird bei der Eingabe maskiert und nie von einer Entität angezeigt.",
         "data": {"label": "Bezeichnung", "id_tag": "NFC-Chip-UID"}
       },
       "card_edit": {"title": "Ladekarte bearbeiten", "data": {"card_id": "Karte"}},
@@ -130,7 +130,7 @@
       "cannot_connect": "Tap Electric API nicht erreichbar.",
       "empty_label": "Geben Sie eine Kartenbezeichnung ein.",
       "duplicate_label": "Eine Karte mit dieser Bezeichnung ist bereits vorhanden.",
-      "invalid_id_tag": "Die NFC-Chip-UID muss genau 8 Hexadezimalzeichen enthalten.",
+      "invalid_id_tag": "Die NFC-Chip-UID muss genau 8, 14 oder 20 Hexadezimalzeichen enthalten.",
       "duplicate_id_tag": "Eine Karte mit dieser NFC-Chip-UID ist bereits vorhanden.",
       "confirm_remove": "Bestätigen Sie, dass Sie diese Karte entfernen möchten."
     }

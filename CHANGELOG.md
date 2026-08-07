@@ -12,6 +12,7 @@ project uses [semantic versioning](https://semver.org/).
   a native Select entity, and migrated automatically from `default_id_tag`.
   Raw NFC UIDs stay out of entity state, attributes, and logs; removing a
   selected card leaves Start unavailable instead of changing billing cards.
+  Standard 4-, 7-, and 10-byte NFC UIDs are accepted.
 
 ## [1.1.1] - 2026-05-29
 

@@ -24,7 +24,10 @@ _OPTIONS = {
 def test_normalize_and_validate_id_tag():
     assert normalize_id_tag("12-ab:34 cd") == "12AB34CD"
     assert is_valid_id_tag("12AB34CD") is True
+    assert is_valid_id_tag("1234567890ABCD") is True
+    assert is_valid_id_tag("1234567890ABCDEF1234") is True
     assert is_valid_id_tag("TAP-1234") is False
+    assert is_valid_id_tag("1234567890") is False
 
 
 def test_card_input_normalizes_and_rejects_duplicates():
