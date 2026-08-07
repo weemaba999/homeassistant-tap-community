@@ -5,9 +5,12 @@ import asyncio
 
 import pytest
 
-from tapelectric.const import DATA_RESET_TYPE
+from tapelectric.const import (
+    DATA_RESET_TYPE,
+    DATA_SELECTED_CHARGING_CARD_IDS,
+)
 from tapelectric.coordinator import TapData
-from tapelectric.select import ResetTypeSelect
+from tapelectric.select import ChargingCardSelect, ResetTypeSelect
 
 from _helpers import make_entry, make_hass
 
@@ -74,3 +77,65 @@ def test_select_disabled_by_default():
         make_hass(), make_entry(), _FakeCoord(_data()), "EVB-1",
     )
     assert sel.entity_registry_enabled_default is False
+
+
+_CARD_OPTIONS = {
+    "charging_cards": [
+        {"id": "work", "label": "Employer", "id_tag": "12AB34CD"},
+        {"id": "home", "label": "Personal", "id_tag": "89ABCDEF"},
+    ],
+    "default_charging_card_id": "work",
+}
+
+
+def _card_select(entry, charger_id="EVB-1"):
+    return ChargingCardSelect(
+        make_hass(), entry, _FakeCoord(_data()), charger_id,
+    )
+
+
+def test_charging_card_select_exposes_labels_only():
+    entry = make_entry(
+        options=_CARD_OPTIONS,
+        data={DATA_SELECTED_CHARGING_CARD_IDS: {"EVB-1": "work"}},
+    )
+    sel = _card_select(entry)
+    assert sel.options == ["Employer", "Personal"]
+    assert sel.current_option == "Employer"
+    assert not any("12AB34CD" in option for option in sel.options)
+
+
+def test_charging_card_select_persists_independently_per_charger():
+    entry = make_entry(
+        options=_CARD_OPTIONS,
+        data={DATA_SELECTED_CHARGING_CARD_IDS: {"EVB-2": "work"}},
+    )
+    sel = _card_select(entry)
+    asyncio.run(sel.async_select_option("Personal"))
+    assert entry.data[DATA_SELECTED_CHARGING_CARD_IDS] == {
+        "EVB-1": "home",
+        "EVB-2": "work",
+    }
+
+
+def test_charging_card_select_stale_selection_has_no_fallback():
+    entry = make_entry(
+        options=_CARD_OPTIONS,
+        data={DATA_SELECTED_CHARGING_CARD_IDS: {"EVB-1": "removed"}},
+    )
+    assert _card_select(entry).current_option is None
+
+
+def test_charging_card_label_edit_preserves_selection():
+    entry = make_entry(
+        options=_CARD_OPTIONS,
+        data={DATA_SELECTED_CHARGING_CARD_IDS: {"EVB-1": "work"}},
+    )
+    entry.options["charging_cards"][0]["label"] = "Employer / Shell"
+    assert _card_select(entry).current_option == "Employer / Shell"
+
+
+def test_charging_card_select_rejects_unknown_label():
+    sel = _card_select(make_entry(options=_CARD_OPTIONS))
+    with pytest.raises(ValueError):
+        asyncio.run(sel.async_select_option("Unknown"))

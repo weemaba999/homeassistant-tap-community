@@ -78,6 +78,7 @@
           "advanced_enable": "Activer le mode avancé",
           "advanced_update": "Mettre à jour les identifiants",
           "advanced_remote": "Paramètres de démarrage/arrêt à distance",
+          "advanced_cards": "Cartes de recharge",
           "advanced_disable": "Désactiver le mode avancé"
         }
       },
@@ -88,11 +89,36 @@
       },
       "advanced_remote": {
         "title": "Paramètres de démarrage/arrêt à distance",
-        "description": "Configurer le démarrage à distance. Trois champs :\n\n• **Tag RFID par défaut** — l'id_tag envoyé lors d'un RemoteStartTransaction. C'est l'UID brut de la puce NFC de votre carte RFID physique : UID puce hex 8 caractères (ex. 12AB34CD). PAS l'identifiant préfixé ET_ affiché dans l'app web Tap. Voir le guide de découverte du README (NFC Tools sur Android, capture F12, ou support Tap).\n\n• **ID d'outlet par borne** — l'identifiant d'outlet interne de Tap (ou_*) pour chaque borne. Requis pour le démarrage à distance. À capturer via l'onglet Réseau (F12) de l'app web Tap lors d'une requête de démarrage à distance, ou en exécutant `tests/probe_har.py` sur un fichier .har enregistré.\n\n• **Identifiant de profil** — optionnel. Remplace l'identifiant usr_* envoyé à l'endpoint chargerManagement de Tap. Laissez vide pour utiliser votre user_id Firebase (valeur par défaut).\n\nLaissez tous les champs vides pour désactiver le démarrage à distance. L'arrêt à distance reste fonctionnel — il n'a besoin que de l'identifiant de transaction active, déjà suivi par l'intégration.",
+        "description": "Configurez le démarrage à distance après avoir ajouté au moins une carte de recharge.\n\n• **ID d'outlet par borne** — l'ID d'outlet interne de Tap (ou_*) pour chaque borne. Requis pour le démarrage à distance. Capturez-le dans une requête de démarrage via l'onglet Réseau (F12) de l'app web Tap, ou exécutez `tests/probe_har.py` sur un fichier HAR enregistré.\n\n• **Identifiant de profil** — optionnel. Remplace le profil usr_* envoyé à Tap. Laissez vide pour utiliser votre identifiant utilisateur Firebase.\n\nL'arrêt à distance ne nécessite aucun de ces paramètres.",
         "data": {
-          "default_id_tag": "Tag RFID par défaut (UID puce hex 8 caractères, ex. 12AB34CD)",
           "advanced_profile_id": "Identifiant de profil Tap (usr_…, override optionnel)"
         }
+      },
+      "advanced_cards": {
+        "title": "Cartes de recharge",
+        "description": "Cartes enregistrées : {cards}\nPar défaut : {default}\n\nLa carte par défaut est définie une seule fois pour les nouvelles bornes détectées. Les sélections existantes ne changent jamais automatiquement.",
+        "menu_options": {"card_add": "Ajouter une carte", "card_edit": "Modifier une carte", "card_remove": "Supprimer une carte", "card_default": "Choisir la carte par défaut", "card_save": "Enregistrer les modifications"}
+      },
+      "card_add": {
+        "title": "Ajouter une carte de recharge",
+        "description": "Saisissez un libellé et l'UID brut de la puce NFC composé de 8 caractères hexadécimaux. L'UID est masqué pendant la saisie et n'est jamais exposé par une entité.",
+        "data": {"label": "Libellé", "id_tag": "UID de la puce NFC"}
+      },
+      "card_edit": {"title": "Modifier une carte de recharge", "data": {"card_id": "Carte"}},
+      "card_edit_details": {
+        "title": "Modifier une carte de recharge",
+        "description": "Laissez l'UID de la puce NFC vide pour conserver la valeur enregistrée.",
+        "data": {"label": "Libellé", "id_tag": "Nouvel UID de puce NFC"}
+      },
+      "card_remove": {
+        "title": "Supprimer une carte de recharge",
+        "description": "La suppression d'une carte sélectionnée ne bascule jamais automatiquement vers une autre carte de facturation. Le démarrage à distance reste indisponible pour les bornes concernées jusqu'à la sélection d'une autre carte.",
+        "data": {"card_id": "Carte", "confirm": "Confirmer la suppression"}
+      },
+      "card_default": {
+        "title": "Choisir la carte de recharge par défaut",
+        "description": "La valeur par défaut s'applique uniquement aux bornes sans sélection enregistrée. Les sélections existantes restent inchangées.",
+        "data": {"card_id": "Carte par défaut"}
       }
     },
     "error": {
@@ -101,7 +127,12 @@
       "user_disabled": "Ce compte Tap est désactivé.",
       "firebase_unknown": "Échec de l'authentification Firebase.",
       "account_discovery_failed": "Connecté, mais aucun compte Tap trouvé.",
-      "cannot_connect": "Impossible de joindre l'API Tap Electric."
+      "cannot_connect": "Impossible de joindre l'API Tap Electric.",
+      "empty_label": "Saisissez un libellé de carte.",
+      "duplicate_label": "Une carte avec ce libellé existe déjà.",
+      "invalid_id_tag": "L'UID de la puce NFC doit contenir exactement 8 caractères hexadécimaux.",
+      "duplicate_id_tag": "Une carte avec cet UID de puce NFC existe déjà.",
+      "confirm_remove": "Confirmez que vous souhaitez supprimer cette carte."
     }
   },
   "issues": {
@@ -172,6 +203,9 @@
     "button": {
       "stop_charging":  {"name": "Arrêter la charge"},
       "start_charging": {"name": "Démarrer la charge"}
+    },
+    "select": {
+      "charging_card": {"name": "Carte de recharge"}
     },
     "switch": {
       "charging_allowed": {"name": "Charge autorisée (obsolète)"}

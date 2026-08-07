@@ -49,6 +49,8 @@ device page or an energy-dashboard hookup._
     charger whose firmware honours remote control commands (see
     [hardware compatibility](#hardware-compatibility) — EVBox Elvi
     refuses both, empirically verified)
+  - Multiple labeled charging cards with one persistent, per-charger
+    selector. The existing Start button uses the selected card.
   - Automatic reauth prompt after 3 consecutive auth failures
 - **Localized**: English, Dutch (Belgian flavor), German (machine-
   translated — native review welcome), French (machine-translated —
@@ -74,7 +76,7 @@ restart:
 ```
 /config/custom_components/tapelectric/
     __init__.py, api.py, api_management.py, auth_firebase.py,
-    binary_sensor.py, button.py, config_flow.py, const.py,
+    binary_sensor.py, button.py, charging_cards.py, config_flow.py, const.py,
     coordinator.py, device_action.py, device_condition.py,
     device_trigger.py, manifest.json, number.py, ocpp.py, repairs.py,
     select.py, sensor.py, services.yaml, strings.json, switch.py,
@@ -128,11 +130,26 @@ Flipping **Enable write operations** off makes the whole integration
 read-only. Pause/resume, limit, reset, and external meter push will
 raise an HA Repairs issue instead of calling the API.
 
+For Remote Start, open **Configure → Advanced mode**:
+
+1. Under **Charging cards**, add each physical card with a unique label
+  and its raw NFC chip UID. The first card becomes the default.
+2. Under **Remote start/stop settings**, configure the `ou_*` outlet ID
+  for each charger. The profile override normally stays empty.
+3. On each charger device, choose the card using **Charging card**.
+
+The default seeds only chargers that have never stored a selection.
+Changing the default never changes an existing charger. Removing a selected
+card leaves that charger's Start button unavailable until another card is
+explicitly selected; it never silently changes the billing card. Existing
+single-`default_id_tag` entries migrate automatically as a card named
+**Default**.
+
 ### Finding your RFID chip UID
 
 The `id_tag` for Remote Start is the raw NFC chip UID burned into
 your physical RFID card — not the `ET_`-prefixed identifier visible
-in the Tap webapp. Three ways to obtain it:
+in the Tap webapp. Practical ways to obtain it:
 
 - **Android**: install NFC Tools (Play Store), hold your charger
   pass against the back of the phone, copy the displayed serial
@@ -141,8 +158,11 @@ in the Tap webapp. Three ways to obtain it:
   to your charger, F12 → Network tab, manually start a session.
   The request body to `.../ocppMessages` contains the `id_tag`
   field with the chip UID.
-- **Ask Tap support**: their engineering team answers technical
-  questions about the value linked to your account.
+- **USB NFC reader**: a PC/SC reader such as an ACS ACR1552U-MF can
+  read the UID on Windows, macOS, or Linux when Android is unavailable.
+
+Tap support has supplied UIDs in the past but may decline under its current
+policy, so treat support as a fallback rather than the primary method.
 
 ## Entity reference
 
@@ -177,7 +197,8 @@ as **Status**, **Charging**, **Plug connected**, etc.
 | Auto-stop kWh / minutes / cost | number | ✖ | HA-local | Blueprint-driven thresholds |
 | Reset | button | ✔ | public | OCPP Reset via dedicated endpoint |
 | Stop charging | button | ✔ (advanced) | mgmt | OCPP RemoteStopTransaction. Available only while a session is active. |
-| Start charging | button | ✔ (advanced) | mgmt | OCPP RemoteStartTransaction. Needs a default RFID id_tag (8-hex chip UID, e.g. 12AB34CD — see [Finding your RFID chip UID](#finding-your-rfid-chip-uid)) + per-charger outlet_id (set under Options → Advanced mode → Remote start/stop settings). |
+| Start charging | button | ✔ (advanced) | mgmt | OCPP RemoteStartTransaction using the charger's selected saved card. Unavailable without a valid selection or outlet ID. |
+| Charging card | select | ✔ (advanced) | HA-local | Friendly labels only; stored independently per charger. Changing it performs no Tap write. |
 | Reset type | select | ✖ | HA-local | Soft / Hard — preselects for the reset button |
 
 ## Hardware compatibility

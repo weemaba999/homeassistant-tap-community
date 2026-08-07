@@ -1,33 +1,20 @@
 """Config-flow tests.
 
-Uses pytest-homeassistant-custom-component. When HA isn't available
-locally, every test is auto-skipped by the `requires_ha` marker
-handled in conftest.
-
-xfail note: the HA integration loader needs `custom_components/` on
-its search path to resolve the `tapelectric` domain. That plumbing
-(hass.config.config_dir + enable_custom_integrations mounting our
-repo) is a separate follow-up. The tests below are written against
-the correct intended flow and will pass once the loader is wired.
+Uses pytest-homeassistant-custom-component. When HA isn't available locally,
+every test is auto-skipped by the `requires_ha` marker in conftest.
 """
 from __future__ import annotations
 
 import pytest
 
-pytestmark = [
-    pytest.mark.requires_ha,
-    pytest.mark.xfail(
-        reason="HA integration loader can't find tapelectric under custom_components/ — separate follow-up",
-        strict=False,
-    ),
-]
+pytestmark = [pytest.mark.requires_ha]
 
 from unittest.mock import AsyncMock, patch
 
 
 async def test_user_step_shows_form(hass):
     from homeassistant.config_entries import SOURCE_USER
-    from tapelectric.const import DOMAIN
+    from custom_components.tapelectric.const import DOMAIN
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_USER},
     )
@@ -37,11 +24,11 @@ async def test_user_step_shows_form(hass):
 
 async def test_user_step_bad_api_key_shows_error(hass):
     from homeassistant.config_entries import SOURCE_USER
-    from tapelectric.const import DOMAIN
-    from tapelectric.api import TapElectricAuthError
+    from custom_components.tapelectric.const import DOMAIN
+    from custom_components.tapelectric.api import TapElectricAuthError
 
     with patch(
-        "tapelectric.config_flow.TapElectricClient.list_chargers",
+        "custom_components.tapelectric.config_flow.TapElectricClient.list_chargers",
         new=AsyncMock(side_effect=TapElectricAuthError("401")),
     ):
         result = await hass.config_entries.flow.async_init(
@@ -54,10 +41,10 @@ async def test_user_step_bad_api_key_shows_error(hass):
 
 async def test_user_step_ok_routes_to_advanced_ask(hass):
     from homeassistant.config_entries import SOURCE_USER
-    from tapelectric.const import DOMAIN
+    from custom_components.tapelectric.const import DOMAIN
 
     with patch(
-        "tapelectric.config_flow.TapElectricClient.list_chargers",
+        "custom_components.tapelectric.config_flow.TapElectricClient.list_chargers",
         new=AsyncMock(return_value=[]),
     ):
         result = await hass.config_entries.flow.async_init(
@@ -70,10 +57,10 @@ async def test_user_step_ok_routes_to_advanced_ask(hass):
 
 async def test_advanced_ask_declined_creates_basic_entry(hass):
     from homeassistant.config_entries import SOURCE_USER
-    from tapelectric.const import DOMAIN
+    from custom_components.tapelectric.const import DOMAIN
 
     with patch(
-        "tapelectric.config_flow.TapElectricClient.list_chargers",
+        "custom_components.tapelectric.config_flow.TapElectricClient.list_chargers",
         new=AsyncMock(return_value=[]),
     ):
         step1 = await hass.config_entries.flow.async_init(
@@ -90,7 +77,7 @@ async def test_advanced_ask_declined_creates_basic_entry(hass):
 async def test_reauth_flow_accepts_new_password(hass):
     """Re-authentication: the entry already exists, we supply a new password."""
     from homeassistant.config_entries import SOURCE_REAUTH
-    from tapelectric.const import DOMAIN
+    from custom_components.tapelectric.const import DOMAIN
     from pytest_homeassistant_custom_component.common import MockConfigEntry
 
     entry = MockConfigEntry(
@@ -101,12 +88,12 @@ async def test_reauth_flow_accepts_new_password(hass):
             "advanced_email": "driver@example.com",
             "advanced_refresh_token": "rt_old",
         },
-        version=2,
+        version=3,
     )
     entry.add_to_hass(hass)
 
     with patch(
-        "tapelectric.auth_firebase.TapFirebaseAuth.sign_in",
+        "custom_components.tapelectric.auth_firebase.TapFirebaseAuth.sign_in",
         new=AsyncMock(return_value=type("T", (), {
             "id_token": "id_new", "refresh_token": "rt_new",
             "user_id": "uid", "email": "driver@example.com",

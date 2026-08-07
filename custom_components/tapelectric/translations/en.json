@@ -80,6 +80,7 @@
           "advanced_enable": "Enable advanced mode",
           "advanced_update": "Update credentials",
           "advanced_remote": "Remote start/stop settings",
+          "advanced_cards": "Charging cards",
           "advanced_disable": "Disable advanced mode"
         }
       },
@@ -93,11 +94,45 @@
       },
       "advanced_remote": {
         "title": "Remote start/stop settings",
-        "description": "Configure Remote Start. Three fields:\n\n• **Default RFID tag** — the id_tag sent on RemoteStartTransaction. This is the raw NFC chip UID burned into your physical RFID card: 8-hex chip UID (e.g. 12AB34CD). NOT the ET_-prefixed visualID shown in the Tap webapp. See the README discovery guide (NFC Tools on Android, F12 capture, or Tap support).\n\n• **Outlet ID per charger** — Tap's internal outlet identifier (ou_*) per charger. Required for Remote Start. Capture via the Tap webapp's F12 Network tab on a remote-start request, or run `tests/probe_har.py` on a saved .har file.\n\n• **Profile ID** — optional. Override the usr_* profile sent to Tap's chargerManagement endpoint. Leave empty to use your Firebase user_id (the default).\n\nLeave every field empty to disable Remote Start. Remote Stop works regardless — it only needs the active transaction ID, which the integration tracks automatically.",
+        "description": "Configure Remote Start after adding at least one charging card.\n\n• **Outlet ID per charger** — Tap's internal outlet identifier (ou_*) per charger. Required for Remote Start. Capture it from a remote-start request in the Tap webapp's F12 Network tab, or run `tests/probe_har.py` on a saved HAR file.\n\n• **Profile ID** — optional. Override the usr_* profile sent to Tap's chargerManagement endpoint. Leave empty to use your Firebase user ID.\n\nRemote Stop does not require either setting.",
         "data": {
-          "default_id_tag": "Default RFID tag (8-hex chip UID, e.g. 12AB34CD)",
           "advanced_profile_id": "Tap profile ID (usr_…, optional override)"
         }
+      },
+      "advanced_cards": {
+        "title": "Charging cards",
+        "description": "Saved cards: {cards}\nDefault: {default}\n\nThe default seeds newly discovered chargers once. Existing charger selections are never changed automatically.",
+        "menu_options": {
+          "card_add": "Add card",
+          "card_edit": "Edit card",
+          "card_remove": "Remove card",
+          "card_default": "Choose default card",
+          "card_save": "Save changes"
+        }
+      },
+      "card_add": {
+        "title": "Add charging card",
+        "description": "Enter a friendly label and the raw 8-hex NFC chip UID. The UID is masked while typing and is never exposed by an entity.",
+        "data": {"label": "Label", "id_tag": "NFC chip UID"}
+      },
+      "card_edit": {
+        "title": "Edit charging card",
+        "data": {"card_id": "Card"}
+      },
+      "card_edit_details": {
+        "title": "Edit charging card",
+        "description": "Leave the NFC chip UID empty to keep the saved value.",
+        "data": {"label": "Label", "id_tag": "New NFC chip UID"}
+      },
+      "card_remove": {
+        "title": "Remove charging card",
+        "description": "Removing a selected card does not switch billing cards automatically. Remote Start stays unavailable for affected chargers until another card is selected.",
+        "data": {"card_id": "Card", "confirm": "Confirm removal"}
+      },
+      "card_default": {
+        "title": "Choose default charging card",
+        "description": "The default applies only to chargers without a stored selection. Existing selections are unchanged.",
+        "data": {"card_id": "Default card"}
       }
     },
     "error": {
@@ -106,7 +141,12 @@
       "user_disabled": "This Tap account is disabled. Contact Tap support.",
       "firebase_unknown": "Firebase authentication failed. Check the logs for details.",
       "account_discovery_failed": "Signed in, but we couldn't determine which Tap account to use.",
-      "cannot_connect": "Could not reach the Tap Electric API."
+      "cannot_connect": "Could not reach the Tap Electric API.",
+      "empty_label": "Enter a card label.",
+      "duplicate_label": "A card with this label already exists.",
+      "invalid_id_tag": "The NFC chip UID must contain exactly 8 hexadecimal characters.",
+      "duplicate_id_tag": "A card with this NFC chip UID already exists.",
+      "confirm_remove": "Confirm that you want to remove this card."
     }
   },
   "issues": {
@@ -177,6 +217,9 @@
     "button": {
       "stop_charging":  {"name": "Stop charging"},
       "start_charging": {"name": "Start charging"}
+    },
+    "select": {
+      "charging_card": {"name": "Charging card"}
     },
     "switch": {
       "charging_allowed": {"name": "Charging allowed (deprecated)"}

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
@@ -452,9 +453,10 @@ class TapManagementClient:
             )
             return None
         except TapManagementError as err:
+            message = _redact_ocpp_error(str(err), body)
             _LOGGER.warning(
                 "OCPP %s on %s failed: %s",
-                body.get("message_type"), charger_id, err,
+                body.get("message_type"), charger_id, message,
             )
             return None
         # Captured live traffic shows 200 + empty body. If the API ever
@@ -590,6 +592,15 @@ class TapManagementClient:
                     "%s %s failed after retry: %s", method, path, err,
                 )
                 raise TapManagementNetworkError(str(err)) from err
+
+
+def _redact_ocpp_error(message: str, body: dict) -> str:
+    """Redact an RFID UID if a server error echoes the request body."""
+    details = body.get("remote_start_transaction_details")
+    id_tag = details.get("id_tag") if isinstance(details, dict) else None
+    if not isinstance(id_tag, str) or not id_tag:
+        return message
+    return re.sub(re.escape(id_tag), "<redacted>", message, flags=re.IGNORECASE)
 
 
 async def _decode_json(resp: aiohttp.ClientResponse, body: bytes) -> Any:

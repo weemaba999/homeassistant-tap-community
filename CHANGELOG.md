@@ -6,7 +6,12 @@ project uses [semantic versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Nothing pending beyond what shipped in 1.1.1.
+### Added
+- Multiple saved charging cards for Remote Start (#9). Cards are managed by
+  friendly label in Advanced options, selected independently per charger via
+  a native Select entity, and migrated automatically from `default_id_tag`.
+  Raw NFC UIDs stay out of entity state, attributes, and logs; removing a
+  selected card leaves Start unavailable instead of changing billing cards.
 
 ## [1.1.1] - 2026-05-29
 

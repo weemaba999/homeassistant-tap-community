@@ -146,9 +146,7 @@ CONF_ADVANCED_FIREBASE_USER_ID = "advanced_firebase_user_id"
 # Optional — falls back to AuthTokens.user_id at request time. Users can
 # override here if their fleet links a different profile.
 CONF_ADVANCED_PROFILE_ID = "advanced_profile_id"
-# RFID tag identifier used as id_tag on OCPP RemoteStartTransaction.
-# Stored as a top-level entry.data field (additive, backwards compatible
-# with v1.0.0 entries that won't have it).
+# Legacy single RFID tag, retained only for v2 -> v3 migration.
 CONF_DEFAULT_ID_TAG = "default_id_tag"
 # Tap "outlet" id (ou_*) per (charger_id, connector_id). Required for the
 # OCPP RemoteStartTransaction envelope. Stored as a nested dict so it can
@@ -177,11 +175,17 @@ DATA_APPLIED_LIMITS = "applied_limits"
 DATA_AUTO_STOP = "auto_stop"
 
 # Current selection for the reset-type SelectEntity (per charger).
-# Stored in entry.options so it survives reloads.
+# Stored in entry.data so it survives reloads without reloading the entry.
 #   reset_type: { <charger_id>: "Soft" | "Hard" }
 DATA_RESET_TYPE = "reset_type"
 
+# Selected saved charging card per charger. Values are stable internal card
+# IDs, never labels or raw RFID UIDs.
+DATA_SELECTED_CHARGING_CARD_IDS = "selected_charging_card_ids"
+
 # ── OptionsFlow keys (all live under entry.options) ─────────────────────
+OPT_CHARGING_CARDS = "charging_cards"
+OPT_DEFAULT_CHARGING_CARD_ID = "default_charging_card_id"
 OPT_SCAN_INTERVAL_ACTIVE_S = "scan_interval_active_s"
 OPT_SCAN_INTERVAL_IDLE_S = "scan_interval_idle_s"
 OPT_SESSIONS_HISTORY_LIMIT = "sessions_history_limit"
