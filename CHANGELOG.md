@@ -6,7 +6,11 @@ project uses [semantic versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Nothing pending beyond what shipped in 1.1.1.
+### Fixed
+- Remote Stop remains available for active sessions whose role-session list
+  row omits the OCPP transaction ID. The button now fetches session detail on
+  demand before sending RemoteStopTransaction. Addresses the Remote Stop path
+  reported in #6.
 
 ## [1.1.1] - 2026-05-29
 
