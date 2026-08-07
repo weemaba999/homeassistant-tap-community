@@ -106,12 +106,10 @@ def _data_with_active_mgmt(transaction_id: int | None = 4242):
     return data
 
 
-def _data_charging_no_mgmt():
-    """Connector is plugged + CHARGING but mgmt is stale — Start should be
-    unavailable because is_plugged() returns True."""
+def _data_with_connector_status(status):
     return TapData(chargers=[{
         "id": "EVB-1",
-        "connectors": [{"id": "1", "status": "CHARGING"}],
+        "connectors": [{"id": "1", "status": status}],
     }])
 
 
@@ -290,8 +288,19 @@ def test_start_button_unavailable_when_session_already_active():
 
 
 def test_start_button_unavailable_when_connector_plugged_charging():
-    btn = _start_button(data=_data_charging_no_mgmt())
+    btn = _start_button(data=_data_with_connector_status("CHARGING"))
     assert btn.available is False
+
+
+@pytest.mark.parametrize("status", ["SUSPENDEDEV", "SUSPENDEDEVSE"])
+def test_start_button_unavailable_when_transaction_suspended(status):
+    btn = _start_button(data=_data_with_connector_status(status))
+    assert btn.available is False
+
+
+def test_start_button_available_when_connector_preparing():
+    btn = _start_button(data=_data_with_connector_status("PREPARING"))
+    assert btn.available is True
 
 
 def test_start_button_unavailable_without_saved_card():

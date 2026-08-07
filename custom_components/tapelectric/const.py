@@ -68,6 +68,12 @@ PLUGGED_CONNECTOR_STATES = frozenset(
     {"CHARGING", "SUSPENDEDEV", "SUSPENDEDEVSE", "PREPARING"}
 )
 
+# Connector states that imply an active transaction. PREPARING is plugged but
+# not yet started, so Remote Start must remain available in that state.
+ACTIVE_SESSION_CONNECTOR_STATES = frozenset(
+    {"CHARGING", "SUSPENDEDEV", "SUSPENDEDEVSE"}
+)
+
 # Connector statuses that indicate an active fault on the physical plug
 # (as opposed to the charger-level status field).
 FAULTED_CONNECTOR_STATES = frozenset({"FAULTED"})

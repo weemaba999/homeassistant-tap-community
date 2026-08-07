@@ -14,6 +14,11 @@ project uses [semantic versioning](https://semver.org/).
   selected card leaves Start unavailable instead of changing billing cards.
   Standard 4-, 7-, and 10-byte NFC UIDs are accepted.
 
+### Fixed
+- Remote Start remains available while an OCPP connector is `PREPARING`
+  (plugged in, no active transaction). Active charging and suspended
+  transactions still keep Start unavailable.
+
 ## [1.1.1] - 2026-05-29
 
 ### Fixed

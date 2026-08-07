@@ -29,6 +29,7 @@ from .api_management import (
 )
 from .charging_cards import selected_card
 from .const import (
+    ACTIVE_SESSION_CONNECTOR_STATES,
     CONF_ADVANCED_MODE,
     DATA_DEFAULT_OUTLET_IDS,
     DATA_RESET_TYPE,
@@ -262,12 +263,16 @@ class StartChargingButton(_AdvancedButtonBase):
 
     def _session_active(self) -> bool:
         # Prefer management-API truth; if that's stale fall back to the
-        # connector-level plugged state so we don't blindly start a
-        # session when the user's car is already charging.
+        # connector status so we don't start over an active transaction.
+        # PREPARING is intentionally startable: the cable is connected but
+        # OCPP has not started a transaction yet.
         s = self.coordinator.data.mgmt_active(self._cid)
         if s is not None:
             return True
-        return self.coordinator.data.is_plugged(self._cid)
+        return any(
+            connector.get("status") in ACTIVE_SESSION_CONNECTOR_STATES
+            for connector in self.coordinator.data.connectors(self._cid)
+        )
 
     @property
     def available(self) -> bool:
